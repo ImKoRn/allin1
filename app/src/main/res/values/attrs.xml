@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SocialCircularImageView">
+        <attr name="social_enableOnlineMark" format="boolean"/>
+        <attr name="social_onlineMarkBorderRadius" format="dimension"/>
+        <attr name="social_onlineMarkCircleRadius" format="dimension"/>
+        <attr name="social_onlineMarkBorderColor" format="color"/>
+        <attr name="social_onlineMarkCircleColor" format="color"/>
+
+        <attr name="social_enableMobileMark" format="boolean"/>
+        <attr name="social_onlineMobileMarkBorderWidth" format="dimension"/>
+        <attr name="social_onlineMobileMarkBorderHeight" format="dimension"/>
+        <attr name="social_onlineMobileMarkBorderSize" format="dimension"/>
+        <attr name="social_onlineMobileMarkBorderColor" format="color"/>
+        <attr name="social_onlineMobileMarkInsideColor" format="color"/>
+        <attr name="social_onlineMobileMarkBorderRadius" format="dimension"/>
+        <attr name="social_onlineMobileMarkInsideRadius" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="CircularImageView">
+        <attr name="civ_border" format="boolean"/>
+        <attr name="civ_border_width" format="dimension"/>
+        <attr name="civ_border_color" format="color"/>
+        <attr name="civ_shadow" format="boolean"/>
+        <attr name="civ_shadow_radius" format="dimension"/>
+        <attr name="civ_shadow_color" format="color"/>
+    </declare-styleable>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:orderInCategory="100" android:id="@+id/sort_options_group"
+        android:checkableBehavior="single" android:enabled="true">
+        <item android:id="@+id/name_sort" android:title="@string/by_name_sort_option" />
+        <item android:id="@+id/surname_sort" android:title="@string/by_surname_sort_option"/>
+        <item android:id="@+id/popularity_sort" android:checked="true" android:title="@string/by_popularity_sort_option"/>
+    </group>
+</menu>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/vk_color"
+    android:gravity="center">
+
+    <com.korn.im.allin1.ui.customview.CircularImageView
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:id="@+id/vkImage"
+        android:src="@drawable/vk_logo"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="25dp"
+        android:layout_marginBottom="25dp" />
+
+    <TextView
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/vkUserNameTextView"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/vk_white"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        android:visibility="invisible" />
+
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="@string/log_in"
+        android:id="@+id/vkLogInOutBtn"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:layout_gravity="center_horizontal"/>
+
+    <Button
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:text="@string/sign_in"
+        android:id="@+id/vkSignInBtn"
+        android:textColor="@color/vk_white"
+        android:layout_gravity="center_horizontal"
+        style="@style/Base.Widget.AppCompat.Button.Borderless" />
+</LinearLayout>

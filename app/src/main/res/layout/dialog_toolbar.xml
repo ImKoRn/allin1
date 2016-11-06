@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/appbar"
+    android:theme="@style/AppTheme.AppBarOverlay">
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        app:popupTheme="@style/AppTheme.PopupOverlay"
+        android:layout_height="?attr/actionBarSize">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_gravity="start"
+            android:clickable="true">
+            <com.korn.im.allin1.ui.customview.SocialCircularImageView
+                android:id="@+id/interlocutorIcon"
+                app:civ_border="false"
+                android:layout_width="@dimen/toolbarImage"
+                android:layout_height="@dimen/toolbarImage"
+                app:social_enableOnlineMark="true"
+                app:social_onlineMarkBorderRadius="6dp"
+                app:social_onlineMarkCircleRadius="4dp"
+                app:social_onlineMarkBorderColor="@color/colorPrimary"
+                app:social_onlineMarkCircleColor="@color/colorOnline"
+
+                app:social_enableMobileMark="true"
+                app:social_onlineMobileMarkBorderWidth="12dp"
+                app:social_onlineMobileMarkBorderHeight="16dp"
+                app:social_onlineMobileMarkBorderSize="2dp"
+                app:social_onlineMobileMarkBorderColor="@color/colorPrimary"
+                app:social_onlineMobileMarkInsideColor="@color/colorOnline"
+                app:social_onlineMobileMarkBorderRadius="3dp"
+                app:social_onlineMobileMarkInsideRadius="2dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/interlocutorName"
+                android:textSize="@dimen/main_text_size"
+                android:textColor="@color/white"
+                android:maxLines="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:ellipsize="marquee"
+                android:text="asdasfadsfsfdfdfgfgdsfasfasff asfasfafsafsaafsfa"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/interlocutorIcon"
+                android:layout_toEndOf="@+id/interlocutorIcon"
+                android:gravity="start|center_vertical" />
+        </RelativeLayout>
+    </android.support.v7.widget.Toolbar>
+</android.support.design.widget.AppBarLayout>

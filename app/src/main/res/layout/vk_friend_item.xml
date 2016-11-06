@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/list_item_height"
+    android:background="@android:color/white">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:id="@+id/root">
+        <com.korn.im.allin1.ui.customview.SocialCircularImageView
+            android:layout_width="41dp"
+            android:layout_height="41dp"
+            android:id="@+id/userIcon"
+            android:src="@mipmap/ic_launcher"
+            app:civ_border="false"
+            android:layout_margin="16dp"
+            app:social_enableOnlineMark="true"
+            app:social_onlineMarkBorderRadius="6dp"
+            app:social_onlineMarkCircleRadius="4dp"
+            app:social_onlineMarkCircleColor="@color/colorOnline"
+
+            app:social_enableMobileMark="true"
+            app:social_onlineMobileMarkBorderWidth="12dp"
+            app:social_onlineMobileMarkBorderHeight="16dp"
+            app:social_onlineMobileMarkBorderSize="2dp"
+            app:social_onlineMobileMarkInsideColor="@color/colorOnline"
+            app:social_onlineMobileMarkBorderRadius="3dp"
+            app:social_onlineMobileMarkInsideRadius="2dp"
+            android:layout_gravity="center_vertical|start"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/vk_black"
+            android:text="ads"
+            android:textSize="@dimen/main_text_size"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:id="@+id/userName"
+            android:layout_marginEnd="16dp"
+            android:gravity="center_vertical"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/userIcon"
+            android:layout_toEndOf="@+id/userIcon"
+            android:layout_marginRight="10dp" />
+    </RelativeLayout>
+</FrameLayout>

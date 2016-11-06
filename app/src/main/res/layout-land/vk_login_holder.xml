@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:background="@color/vk_color"
+        android:gravity="center">
+
+        <com.korn.im.allin1.ui.customview.CircularImageView
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:id="@+id/vkImage"
+            android:src="@drawable/vk_logo"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:id="@+id/vkUserNameTextView"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/vk_white"
+            android:gravity="center"
+            android:layout_gravity="center_horizontal"
+            android:visibility="invisible" />
+
+        <Button
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="@string/log_in"
+            android:id="@+id/vkLogInOutBtn"
+            style="@style/Widget.AppCompat.Button.Colored"
+            android:layout_gravity="center_horizontal" />
+
+        <Button
+            style="@style/Base.Widget.AppCompat.Button.Borderless"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sign_in"
+            android:id="@+id/vkSignInBtn"
+            android:textColor="@color/vk_white"
+            android:layout_gravity="bottom|center_horizontal" />
+    </LinearLayout>
+</android.support.v4.widget.NestedScrollView>

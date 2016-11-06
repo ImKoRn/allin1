@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:background="@android:color/white"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="88dp">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/root"
+        android:clickable="true"
+        android:padding="@dimen/list_item_left_and_right_padding"
+        android:background="?attr/selectableItemBackground">
+        <com.korn.im.allin1.ui.customview.SocialCircularImageView
+            android:layout_width="@dimen/icon_size"
+            android:layout_height="@dimen/icon_size"
+            android:id="@+id/userIcon"
+            android:src="@mipmap/ic_launcher"
+            app:civ_border="false"
+            app:social_enableOnlineMark="true"
+            app:social_onlineMarkBorderRadius="8dp"
+            app:social_onlineMarkCircleRadius="6dp"
+            app:social_onlineMarkCircleColor="@color/colorOnline"
+
+            app:social_enableMobileMark="true"
+            app:social_onlineMobileMarkBorderWidth="14dp"
+            app:social_onlineMobileMarkBorderHeight="19dp"
+            app:social_onlineMobileMarkBorderSize="2dp"
+            app:social_onlineMobileMarkInsideColor="@color/colorOnline"
+            app:social_onlineMobileMarkBorderRadius="3dp"
+            app:social_onlineMobileMarkInsideRadius="2dp"
+
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="@dimen/list_item_text_padding"
+            android:layout_toRightOf="@+id/userIcon"
+            android:layout_toEndOf="@+id/userIcon"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:id="@+id/textLayout"
+            android:layout_alignParentTop="true">
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/vk_black"
+                android:textSize="@dimen/main_text_size"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:id="@+id/userName"
+                android:gravity="center_vertical"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_toStartOf="@+id/dateTime"
+                android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin congue euismod enim. Vestibulum at dui nec nisl placerat imperdiet quis at ante. Donec ultricies pretium nisl in auctor. Suspendisse potenti. Praesent ut lectus justo. Nunc enim elit, feugiat ut mollis et, luctus eu nulla. Nulla luctus justo metus, et aliquet nulla fermentum sed. Maecenas sagittis fermentum nulla, quis vulputate augue vulputate in. Nunc ullamcorper, lorem sed commodo sollicitudin, turpis ligula commodo tellus, non malesuada arcu lacus hendrerit turpis. Suspendisse in ligula vitae massa lobortis sollicitudin."
+                android:layout_toLeftOf="@+id/dateTime" />
+
+            <TextView
+                android:layout_width="56dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/dateTime"
+                android:text="21 minutes ago"
+                android:textSize="@dimen/second_text_size"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:layout_above="@+id/frameLayout"
+                android:gravity="end" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@+id/userName"
+                android:id="@+id/frameLayout"
+                android:layout_alignParentBottom="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:id="@+id/lastMessage"
+                    android:textSize="@dimen/second_text_size"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin congue euismod enim. Vestibulum at dui nec nisl placerat imperdiet quis at ante. Donec ultricies pretium nisl in auctor. Suspendisse potenti. Praesent ut lectus justo. Nunc enim elit, feugiat ut mollis et, luctus eu nulla. Nulla luctus justo metus, et aliquet nulla fermentum sed. Maecenas sagittis fermentum nulla, quis vulputate augue vulputate in. Nunc ullamcorper, lorem sed commodo sollicitudin, turpis ligula commodo tellus, non malesuada arcu lacus hendrerit turpis. Suspendisse in ligula vitae massa lobortis sollicitudin."
+                    android:layout_gravity="start"
+                    android:gravity="fill_vertical" />
+
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:minHeight="24dp"
+                    android:minWidth="24dp"
+                    android:background="@drawable/number"
+                    android:id="@+id/unreadCount"
+                    android:gravity="center"
+                    android:layout_gravity="center_vertical|end"
+                    android:visibility="invisible" />
+
+            </FrameLayout>
+        </RelativeLayout>
+    </RelativeLayout>
+</RelativeLayout>

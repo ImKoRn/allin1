@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/dialog_toolbar"/>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/messages_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/outMessageSection"
+        android:layout_below="@+id/appbar"/>
+
+    <include layout="@layout/messaging_bottom_bar"/>
+</RelativeLayout>
