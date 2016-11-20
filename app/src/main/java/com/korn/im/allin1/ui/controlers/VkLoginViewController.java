@@ -13,7 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.korn.im.allin1.R;
-import com.korn.im.allin1.pojo.User;
+import com.korn.im.allin1.pojo.Interlocutor;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.assist.FailReason;
 import com.nostra13.universalimageloader.core.listener.ImageLoadingListener;
@@ -29,7 +29,7 @@ public class VkLoginViewController extends Controller {
     private static String logIn;
     private static String logOut;
 
-    private User user = null;
+    private Interlocutor user = null;
 
     public VkLoginViewController(Activity activity) {
         super(activity);
@@ -40,13 +40,11 @@ public class VkLoginViewController extends Controller {
 
     @Override
     public void restoreInstance(Bundle savedInstanceState) {
-        user = (User) savedInstanceState.get(USER_STATE);
     }
 
     @Override
     public void saveInstance(Bundle outInstanceState) {
-        if(user != null)
-            outInstanceState.putParcelable(USER_STATE, user);
+
     }
 
     @Override
@@ -142,7 +140,7 @@ public class VkLoginViewController extends Controller {
         });
     }
 
-    public void setUser(User user) {
+    public void setUser(Interlocutor user) {
         this.user = user;
     }
 }

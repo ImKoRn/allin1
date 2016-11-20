@@ -10,7 +10,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
-import com.korn.im.allin1.vk.pojo.VkUser;
 
 import java.lang.reflect.Type;
 
@@ -112,11 +111,11 @@ public class VkLongPullResponse {
                         break;
                     }
                     case 8 : {
-                        updates.addFriendStatusEvent(-event.get(1).getAsInt(), event.get(2).getAsInt() & VkUser.MASK);
+                        //updates.addFriendStatusEvent(-event.get(1).getAsInt(), event.get(2).getAsInt() & VkUser.MASK);
                         break;
                     }
                     case 9 : {
-                        updates.addFriendStatusEvent(-event.get(1).getAsInt(), VkUser.OFFLINE);
+                        //updates.addFriendStatusEvent(-event.get(1).getAsInt(), VkUser.OFFLINE);
                         break;
                     }
                     case 61 : {

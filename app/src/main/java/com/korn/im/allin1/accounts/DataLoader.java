@@ -1,4 +1,4 @@
-package com.korn.im.allin1.accounts.newaccount;
+package com.korn.im.allin1.accounts;
 
 import android.util.Pair;
 
@@ -6,8 +6,9 @@ import com.korn.im.allin1.pojo.Dialog;
 import com.korn.im.allin1.pojo.Dialogs;
 import com.korn.im.allin1.pojo.Interlocutor;
 import com.korn.im.allin1.pojo.User;
+import com.korn.im.allin1.vk.pojo.VkDialogs;
 
-import java.util.List;
+import java.util.Map;
 
 import rx.Observable;
 
@@ -16,13 +17,11 @@ public interface DataLoader<
         TDialogs extends Dialogs,
         TDialog extends Dialog,
         TInterlocutor extends Interlocutor> {
-    Observable<List<TUser>> loadFriends();
-    Observable<List<TUser>> loadNextPageOfFriends();
+    Observable<? extends Map<Integer, TUser>> loadFriends();
 
-    Observable<TUser> loadUser(int id);
+    Observable<TUser> loadUsers(int... id);
 
-    Observable<Pair<TDialogs, List<TInterlocutor>>> loadDialogs();
-    Observable<Pair<TDialogs, List<TInterlocutor>>> loadNextPageOfDialogs();
+    Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>> loadDialogs(int offset, int size);
 
     Observable<TDialog> loadDialog(int id);
 }

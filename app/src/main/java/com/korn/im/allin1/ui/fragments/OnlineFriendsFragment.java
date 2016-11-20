@@ -13,32 +13,17 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.korn.im.allin1.R;
-import com.korn.im.allin1.accounts.AccountManager;
-import com.korn.im.allin1.accounts.Event;
-import com.korn.im.allin1.adapters.AdvancedAdapter;
 import com.korn.im.allin1.adapters.FriendsAdapter;
 import com.korn.im.allin1.adapters.OnlineFriendsAdapter;
 import com.korn.im.allin1.common.RecyclerPauseOnScrollListener;
-import com.korn.im.allin1.pojo.User;
-import com.korn.im.allin1.vk.VkRequestUtil;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.turingtechnologies.materialscrollbar.AlphabetIndicator;
 import com.turingtechnologies.materialscrollbar.DragScrollBar;
 
-import java.util.List;
-import java.util.Set;
-
 import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
-import rx.functions.Func1;
 
-/**
- * Created by korn on 08.08.16.
- */
 public class OnlineFriendsFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String ONLINE_FRIENDS_MANAGER_STATE = "llm_state";
 
@@ -80,8 +65,7 @@ public class OnlineFriendsFragment extends Fragment implements SwipeRefreshLayou
 
         onlineFriendsList.setLayoutManager(llm = getLayoutManager());
 
-        onlineFriendsList.setAdapter(onlineFriendsAdapter = new OnlineFriendsAdapter(getContext(),
-                R.color.colorOnline, R.color.colorOffline, FriendsAdapter.DEFAULT_CAPACITY));
+        onlineFriendsList.setAdapter(onlineFriendsAdapter = new OnlineFriendsAdapter(getContext(), FriendsAdapter.DEFAULT_CAPACITY));
         onlineFriendsList.addOnScrollListener(new RecyclerPauseOnScrollListener(ImageLoader.getInstance(),
                 true, true));
 

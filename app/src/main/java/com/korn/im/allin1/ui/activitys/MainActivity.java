@@ -1,30 +1,21 @@
 package com.korn.im.allin1.ui.activitys;
 
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.design.widget.TabLayout;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-
-import android.support.v4.view.ViewPager;
-import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
-import com.korn.im.allin1.accounts.Account;
-import com.korn.im.allin1.accounts.AccountManager;
 import com.korn.im.allin1.R;
+import com.korn.im.allin1.accounts.AccountManager;
 import com.korn.im.allin1.adapters.PagerAdapter;
 
-public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSelectedListener, Account.OnLogOutListener {
-    private PagerAdapter pagerAdapter;
-
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
-    private ViewPager viewPager;
+public class MainActivity extends AppCompatActivity {
 
     //-------------------- Lifecycle ---------------------------
 
@@ -38,15 +29,14 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
 
         initToolbar();
 
-        pagerAdapter = new PagerAdapter(this, getSupportFragmentManager());
-        viewPager = (ViewPager) findViewById(R.id.container);
+        PagerAdapter pagerAdapter = new PagerAdapter(this, getSupportFragmentManager());
+        ViewPager viewPager = (ViewPager) findViewById(R.id.container);
         viewPager.setAdapter(pagerAdapter);
         viewPager.setOffscreenPageLimit(PagerAdapter.ITEM_COUNT);
 
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
-        tabLayout.addOnTabSelectedListener(this);
     }
 
     @Override
@@ -71,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
         int id = item.getItemId();
 
         if (id == R.id.action_logout) {
-            AccountManager.getInstance().getVkAccount().logOut();
+            AccountManager.getInstance().getAccount().logOut();
             startLoginActivity();
             return true;
         }
@@ -82,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
     //--------------------- Behavior ----------------------------
 
     private void checkLogIn() {
-        if(!AccountManager.getInstance().hasLoggedInAccount())
+        if(!AccountManager.getInstance().hasAccounts())
             startLoginActivity();
     }
 
@@ -94,33 +84,13 @@ public class MainActivity extends AppCompatActivity implements TabLayout.OnTabSe
     private void initToolbar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        if (getSupportActionBar() != null)
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
 
         Spinner spinner = (Spinner) findViewById(R.id.spinner);
         ArrayAdapter arrayAdapter = new ArrayAdapter<>(this, R.layout.toolbar_spiner_item,
-                new String[] {"Vk", "Facebook", "Odnoklasniki"});
+                new String[] {"Vk", "Facebook"});
         arrayAdapter.setDropDownViewResource(android.R.layout.simple_list_item_1);
         spinner.setAdapter(arrayAdapter);
-    }
-
-    //--------------------- Interfaces ---------------------------
-    @Override
-    public void onTabSelected(TabLayout.Tab tab) {
-        int i = 5;
-    }
-
-    @Override
-    public void onTabUnselected(TabLayout.Tab tab) {
-        int i = 5;
-    }
-
-    @Override
-    public void onTabReselected(TabLayout.Tab tab) {
-        int i = 5;
-    }
-
-    @Override
-    public void onLoggedOut() {
-        checkLogIn();
     }
 }

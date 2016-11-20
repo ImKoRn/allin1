@@ -1,11 +1,13 @@
-package com.korn.im.allin1.accounts.newaccount;
+package com.korn.im.allin1.accounts;
+
+import android.util.Pair;
 
 import com.korn.im.allin1.pojo.Dialog;
 import com.korn.im.allin1.pojo.Dialogs;
 import com.korn.im.allin1.pojo.Interlocutor;
 import com.korn.im.allin1.pojo.User;
 
-import java.util.List;
+import java.util.Map;
 
 import rx.Observable;
 
@@ -14,22 +16,19 @@ public interface DbManager <
         TDialogs extends Dialogs,
         TDialog extends Dialog,
         TInterlocutor extends Interlocutor> {
-     Observable<TUser> getOwner();
-     void saveOwner(TUser owner);
-
-     Observable<List<TUser>> getFriends();
-     void saveFriends(List<TUser> users);
+     Observable<Map<Integer, TUser>> getFriends();
+     void saveFriends(Map<Integer, TUser> users);
      Observable<TUser> getFriend(int id);
      void saveFriend(TUser user);
 
-     Observable<TDialogs> getDialogs();
+     Observable<Pair<TDialogs, ? extends Map<Integer, ? extends TInterlocutor>>> getDialogs();
      void saveDialogs(TDialogs dialogs);
      Observable<TDialog> getDialog(int id);
      void saveDialog(TDialog dialog);
 
 
-     Observable<List<TInterlocutor>> getInterlocutors();
-     void saveInterlocutors(List<TInterlocutor> interlocutors);
+     Observable<Map<Integer, TInterlocutor>> getInterlocutors();
+     void saveInterlocutors(Map<Integer, ? extends TInterlocutor> interlocutors);
      Observable<TInterlocutor> getInterlocutor(int id);
      void saveInterlocutor(TInterlocutor interlocutor);
 }

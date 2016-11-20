@@ -1,68 +1,73 @@
 package com.korn.im.allin1.vk.pojo;
 
-import android.annotation.SuppressLint;
-
 import com.korn.im.allin1.pojo.Message;
-import com.korn.im.allin1.vk.pojo.attachments.VkPhotoAttachment;
-import com.vk.sdk.api.model.VKApiMessage;
-import com.vk.sdk.api.model.VKList;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.List;
-
 /**
- * Created by korn on 26.08.16.
+ * Vk message representation
  */
-@SuppressLint("ParcelCreator")
-public class VkMessage extends VKApiMessage implements Message {
-    private int chat_id = -1;
-    private List<VkMessage> fwd_messages;
-    private List<VkPhotoAttachment> attachments;
+public class VkMessage implements Message {
+    private static final String ID_FIELD = "id";
+    private static final String USER_ID_FIELD = "user_id";
+    private static final String TITLE_FIELD = "title";
+    private static final String BODY_FIELD = "body";
+    private static final String DATE_FIELD = "date";
+    private static final String READ_FIELD = "read_state";
+    private static final String OUT_FIELD = "out";
+    private static final String DELETED_FIELD = "deleted";
+    private static final String CHAT_ID = "chat_id";
 
-    public VkMessage(JSONObject object) throws JSONException {
-        parse(object);
+    // General fields
+    private final int id;
+    private final int userId;
+    private final int dialogId;
+    private final long date;
+    private final String title;
+    private final String content;
+    private final boolean isOut;
+    private final boolean isRead;
+
+    // Optional fields
+    private final boolean deleted;
+    private final int chatId;
+
+    VkMessage(JSONObject source) throws JSONException {
+        // General fields
+        id = source.getInt(ID_FIELD);
+        userId = source.getInt(USER_ID_FIELD);
+        title = source.getString(TITLE_FIELD);
+        content = source.getString(BODY_FIELD);
+        date = source.getLong(DATE_FIELD);
+        isRead = source.getInt(READ_FIELD) == 1;
+        isOut = source.getInt(OUT_FIELD) == 1;
+
+        // Optional fields
+        deleted = source.optInt(DELETED_FIELD, 0) == 1;
+        chatId = source.optInt(CHAT_ID, -1);
+
+        dialogId = isChatMessage() ? chatId + 2000000000 : userId;
     }
-
-    public VkMessage(String content) {
-        read_state = false;
-        body = content;
-    }
-
-    public VkMessage(Message message) {
-        body = message.getContent();
-        out = message.isOut();
-        id = message.getId();
-        date = message.getDate();
-        read_state = message.isRead();
-    }
-
 
     @Override
-    public VKApiMessage parse(JSONObject source) throws JSONException {
-        chat_id = source.optInt("chat_id", -1);
-        id = source.optInt("id");
-        user_id = source.optInt("user_id");
-        date = source.optLong("date");
-        read_state = source.optInt("read_state", 0) == 1;
-        out = source.optInt("out", 0) == 1;
-        title = source.optString("title");
-        body = source.optString("body");
-        attachments = new VKList<>(source.optJSONArray("attachments"), VkPhotoAttachment.class);
-        fwd_messages = new VKList<>(source.optJSONArray("fwd_messages"), VkMessage.class);
-        //emoji = ParseUtils.parseBoolean(source, "emoji");
-        deleted = source.optInt("deleted", 0) == 1;
-        return this;
+    public int getId() {
+        return id;
     }
 
-    public void setDialogId(int id) {
-        user_id = id;
+    @Override
+    public int getDialogId() {
+        return dialogId;
     }
 
     @Override
     public String getContent() {
-        return body;
+        return content;
+    }
+
+    @Override
+    public String getTitle() {
+        return title;
     }
 
     @Override
@@ -70,36 +75,21 @@ public class VkMessage extends VKApiMessage implements Message {
         return date;
     }
 
-
     @Override
-    public synchronized boolean isRead() {
-        return read_state;
-    }
-
-    @Override
-    public int getDialogId() {
-        return isChatMessage()? chat_id + 2000000000 : user_id;
+    public boolean isRead() {
+        return isRead;
     }
 
     @Override
     public boolean isOut() {
-        return out;
+        return isOut;
     }
 
-    @Override
-    public synchronized boolean isDeleted() {
+    boolean isDeleted() {
         return deleted;
     }
 
-    public synchronized void setRead(boolean read) {
-        read_state = read;
-    }
-
-    public synchronized void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
-
-    public boolean isChatMessage() {
-        return chat_id != -1;
+    boolean isChatMessage() {
+        return chatId != -1 ;
     }
 }

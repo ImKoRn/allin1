@@ -17,7 +17,6 @@ public class VkLongPullEvent {
     private HashMap<Integer, Integer> friendsStatusMap;
     private HashMap<Integer, List<Pair<Integer, Integer>>> messagesFlagsMap;
 
-    private VkDialogsUpdate dialogsUpdate;
     private HashMap<Integer, List<Pair<Integer, Boolean>>> messagesReadsMap;
 
     public void addDialogWriteEvent(int id, int who) {
@@ -80,13 +79,5 @@ public class VkLongPullEvent {
             return Collections.emptyMap();
 
         return messagesReadsMap;
-    }
-
-    public void addDialogsUpdate(VkDialogsUpdate dialogsUpdate) {
-        this.dialogsUpdate = dialogsUpdate;
-    }
-
-    public VkDialogsUpdate getDialogsUpdate() {
-        return dialogsUpdate;
     }
 }

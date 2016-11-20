@@ -1,3 +1,4 @@
+/*
 package com.korn.im.allin1.services;
 
 import android.app.IntentService;
@@ -6,7 +7,6 @@ import android.util.Log;
 
 import com.google.gson.GsonBuilder;
 import com.korn.im.allin1.retrofit.VkLongPullVkRequest;
-import com.korn.im.allin1.vk.VkDialogsUpdate;
 import com.korn.im.allin1.vk.VkLongPullEvent;
 import com.korn.im.allin1.vk.VkLongPullResponse;
 import com.korn.im.allin1.vk.VkRequestUtil;
@@ -26,11 +26,13 @@ import rx.Observable;
 import rx.subjects.PublishSubject;
 
 
+*/
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
  * a service on a separate handler thread.
  * <p/>
- */
+ *//*
+
 public class VkLongPullService extends IntentService {
     private static final String TAG = "VkLongPullService";
     //Connection to long pull constants
@@ -68,8 +70,10 @@ public class VkLongPullService extends IntentService {
         if (intent == null)
             return;
 
-        /*AccountManager.getInstance().getVkAccount()
-                .getEngine().setLongPullService(this);*/
+        */
+/*AccountManager.getInstance().getVkAccount()
+                .getEngine().setLongPullService(this);*//*
+
 
         connectToVkLongPull();
 
@@ -180,3 +184,4 @@ public class VkLongPullService extends IntentService {
         void onStop();
     }
 }
+*/

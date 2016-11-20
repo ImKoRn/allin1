@@ -1,46 +1,47 @@
 package com.korn.im.allin1.accounts;
 
-import android.content.Context;
-import android.support.annotation.NonNull;
-
-import com.korn.im.allin1.VkAccount;
-import com.vk.sdk.VKSdk;
+import com.korn.im.allin1.pojo.Dialog;
+import com.korn.im.allin1.pojo.Dialogs;
+import com.korn.im.allin1.pojo.Interlocutor;
+import com.korn.im.allin1.pojo.Message;
+import com.korn.im.allin1.pojo.User;
+import com.korn.im.allin1.vk.VkAccount;
 
 public class AccountManager {
-    private VkAccount vkAccount;
-
-    private static AccountManager instance;
+    private Account<
+            ? extends Message,
+            ? extends User,
+            ? extends Dialogs,
+            ? extends Dialog,
+            ? extends Interlocutor> vkAccount = new VkAccount();
+    private static AccountManager instance = new AccountManager();
 
     public static AccountManager getInstance() {
-        if (instance == null)
-            throw new IllegalStateException("Not initialized, use init()");
         return instance;
     }
 
-    public static void init(@NonNull Context context) {
-        instance = new AccountManager(context);
-    }
+    private AccountManager() {}
 
-    private AccountManager(Context context) {
-        initApi(context);
-
-        initAccounts();
-    }
-
-    private void initAccounts() {
-        vkAccount = new VkAccount();
-    }
-
-    private void initApi(Context context) {
-        VKSdk.initialize(context);
-    }
-
-    public boolean hasLoggedInAccount() {
-
-        return vkAccount.isLoggedIn();
-    }
-
-    public VkAccount getVkAccount() {
+    public Account <
+            ? extends Message,
+            ? extends User,
+            ? extends Dialogs,
+            ? extends Dialog,
+            ? extends Interlocutor>
+    getAccount() {
         return vkAccount;
+    }
+
+    public void addAccount(Account<
+            ? extends Message,
+            ? extends User,
+            ? extends Dialogs,
+            ? extends Dialog,
+            ? extends Interlocutor> account) {
+        vkAccount = account;
+    }
+
+    public boolean hasAccounts() {
+        return vkAccount != null;
     }
 }

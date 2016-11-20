@@ -4,7 +4,6 @@ import android.app.Application;
 import android.os.Environment;
 import android.util.Log;
 
-import com.korn.im.allin1.accounts.AccountManager;
 import com.nostra13.universalimageloader.cache.disc.impl.ext.LruDiskCache;
 import com.nostra13.universalimageloader.cache.disc.naming.Md5FileNameGenerator;
 import com.nostra13.universalimageloader.cache.memory.impl.UsingFreqLimitedMemoryCache;
@@ -13,13 +12,11 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
 import com.squareup.leakcanary.LeakCanary;
+import com.vk.sdk.VKSdk;
 
 import java.io.File;
 import java.io.IOException;
 
-/**
- * Created by korn on 03.08.16.
- */
 public class ThisApp extends Application {
     private static final String IMAGE_CACHE_DIR = "images";
     private static final String TAG = "Application";
@@ -28,8 +25,7 @@ public class ThisApp extends Application {
     public void onCreate() {
         super.onCreate();
         LeakCanary.install(this);
-
-        AccountManager.init(this);
+        VKSdk.initialize(this);
 
         ImageLoaderConfiguration.Builder config = new ImageLoaderConfiguration.Builder(this)
                 .memoryCache(new UsingFreqLimitedMemoryCache(15 * 1024 * 1024))

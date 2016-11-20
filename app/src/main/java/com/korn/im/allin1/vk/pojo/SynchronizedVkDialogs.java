@@ -2,32 +2,28 @@ package com.korn.im.allin1.vk.pojo;
 
 import android.annotation.SuppressLint;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import com.korn.im.allin1.pojo.Dialogs;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
- * Created by korn on 02.09.16.
+ * Synchronized Vk dialog
  */
 @SuppressLint("UseSparseArrays")
-@SuppressWarnings("unchecked")
-public class SynchronizedVkDialogs implements Dialogs<VkDialog> {
-    private final Map<Integer, VkDialog> dialogs = Collections.synchronizedMap(new HashMap<Integer, VkDialog>());
+public class SynchronizedVkDialogs implements Dialogs<VkDialog, VkMessage> {
+    private final Map<Integer, VkDialog> dialogs = Collections.synchronizedMap(new HashMap<>());
+    private final Table<Integer, Integer, VkMessage> messages = HashBasedTable.create();
     private volatile int unreadDialogCount = 0;
-    private volatile int size = 0;
 
     @Override
     public int size() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
+        return dialogs.size();
     }
 
     @Override
@@ -40,13 +36,16 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog> {
     }
 
     @Override
-    public List<VkDialog> getDialogs() {
-        return new ArrayList<>(dialogs.values());
+    public Map<Integer, VkDialog> getDialogs() {
+        synchronized (dialogs) {
+            return ImmutableMap.copyOf(dialogs);
+        }
     }
 
-    public void addDialogs(Collection<VkDialog> newDialogs) {
+    public void addDialogs(Map<Integer, VkDialog> newDialogs, boolean rewrite) {
         synchronized (dialogs) {
-            for (VkDialog dialog : newDialogs) dialogs.put(dialog.getId(), dialog);
+            if (rewrite) dialogs.clear();
+            dialogs.putAll(newDialogs);
         }
     }
 
@@ -55,7 +54,48 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog> {
         return dialogs.get(id);
     }
 
+    @Override
+    public Table<Integer, Integer, VkMessage> getMessages() {
+        synchronized (messages) {
+            return ImmutableTable.copyOf(messages);
+        }
+    }
+
+    @Override
+    public Map<Integer, VkMessage> getDialogMessages(int dialogId) {
+        synchronized (messages) {
+            return ImmutableMap.copyOf(messages.row(dialogId));
+        }
+    }
+
+    @Override
+    public VkMessage getMessage(int dialogId, int messageId) {
+        synchronized (messages) {
+            return messages.get(dialogId, messageId);
+        }
+    }
+
     public void addDialog(VkDialog newDialog) {
-        dialogs.put(newDialog.getId(), newDialog);
+        synchronized (dialogs) {
+            dialogs.put(newDialog.getId(), newDialog);
+        }
+    }
+
+    public VkDialogs getCopy() {
+        synchronized (dialogs) {
+            synchronized (messages) {
+                return new VkDialogs(this);
+            }
+        }
+    }
+
+    public int nextDialogsStamp() {
+        synchronized (dialogs) {
+            int stamp = -1;
+            for (Map.Entry<Integer, VkDialog> entry : dialogs.entrySet())
+                if (stamp > entry.getValue().getLastMessageId() || stamp == -1)
+                    stamp = entry.getValue().getLastMessageId();
+            return stamp;
+        }
     }
 }

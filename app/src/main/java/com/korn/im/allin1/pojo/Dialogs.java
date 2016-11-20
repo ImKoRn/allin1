@@ -1,14 +1,18 @@
 package com.korn.im.allin1.pojo;
 
-import java.util.List;
+import com.google.common.collect.Table;
+import java.util.Map;
 
 /**
- * Created by korn on 26.08.16.
+ * Dialogs representation
  */
-public interface Dialogs<TDialog extends Dialog> {
+public interface Dialogs<TDialog extends Dialog, TMessage extends Message> {
     int size();
     int getUnreadDialogsCount();
 
-    List<TDialog> getDialogs();
+    Map<Integer, TDialog> getDialogs();
     TDialog getDialog(int id);
+    Table<Integer, Integer, TMessage> getMessages();
+    Map<Integer, TMessage> getDialogMessages(int dialogId);
+    TMessage getMessage(int dialogId, int messageId);
 }

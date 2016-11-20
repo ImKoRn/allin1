@@ -17,10 +17,10 @@ import com.korn.im.allin1.ui.fragments.OnlineFriendsFragment;
  */
 public class PagerAdapter extends FragmentPagerAdapter {
     private static final int FRIENDS_POSITION = 0;
-    private static final int ONLINE_FRIENDS_POSITION = 1;
-    private static final int DIALOGS_POSITION = 2;
+    private static final int ONLINE_FRIENDS_POSITION = 2;
+    private static final int DIALOGS_POSITION = 1;
 
-    public static final int ITEM_COUNT = 3;
+    public static final int ITEM_COUNT = 1;
 
 
     private String friendsSection;

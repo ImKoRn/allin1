@@ -1,8 +1,6 @@
 package com.korn.im.allin1.adapters;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.support.annotation.ColorRes;
 import android.support.v7.util.SortedList;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -12,16 +10,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.google.common.collect.Table;
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.pojo.Dialog;
 import com.korn.im.allin1.pojo.Dialogs;
 import com.korn.im.allin1.pojo.Interlocutor;
+import com.korn.im.allin1.pojo.Message;
 import com.korn.im.allin1.ui.customview.SocialCircularImageView;
 import com.nostra13.universalimageloader.core.ImageLoader;
 
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -39,18 +40,15 @@ public class DialogsAdapter extends AdvancedAdapter {
 
     private Comparator<Dialog> comparator = Dialog.TIME_ORDERED;
 
-    private Dialogs dataSource;
     private final SortedList<Dialog> data;
+    private Map<Integer, ? extends Interlocutor> interlocutors;
+    private Table<Integer, Integer, Message> messages;
 
-    private int offlineColor = Color.WHITE;
-    private int onlineColor = Color.GREEN;
-
-    public DialogsAdapter(Context context, @ColorRes int onlineColorRes, @ColorRes int offlineColorRes,
-                          RecyclerView recyclerView, LinearLayoutManager llm) {
+    public DialogsAdapter(Context context,
+                          RecyclerView recyclerView,
+                          LinearLayoutManager llm) {
         super(recyclerView, llm);
         this.context = context;
-        onlineColor = context.getResources().getColor(onlineColorRes);
-        offlineColor = context.getResources().getColor(offlineColorRes);
         data = new SortedList<>(Dialog.class, new SortedList.BatchedCallback<>(new SortedListAdapterCallback<Dialog>(this) {
             @Override
             public int compare(Dialog first, Dialog second) {
@@ -82,7 +80,9 @@ public class DialogsAdapter extends AdvancedAdapter {
     public void onBindViewHolder(Holder holder, int position) {
         if(position == getActualItemCount()) return;
         Dialog dialog = data.get(position);
-        //((DialogHolder) holder).bind(dialog, dataSource.getInterlocutor(dialog.getId()));
+        if (interlocutors.get(dialog.getId()) == null)
+            dialog.getId();
+        ((DialogHolder) holder).bind(dialog, interlocutors.get(dialog.getId()), messages.get(dialog.getId(), dialog.getLastMessageId()));
     }
 
     @Override
@@ -103,13 +103,12 @@ public class DialogsAdapter extends AdvancedAdapter {
         return data == null ? 0 : data.size();
     }
 
-    public void setData(Dialogs dialogs) {
+    public void setData(Dialogs<Dialog, Message> dialogs, Map<Integer, ? extends Interlocutor> interlocutors) {
         currentTime = System.currentTimeMillis() / 1000L;
-        this.dataSource = dialogs;
+        this.interlocutors = interlocutors;
+        this.messages = dialogs.getMessages();
         data.beginBatchedUpdates();
-        synchronized (dataSource) {
-            data.addAll(dialogs.getDialogs());
-        }
+        data.addAll(dialogs.getDialogs().values());
         data.endBatchedUpdates();
     }
 
@@ -118,9 +117,6 @@ public class DialogsAdapter extends AdvancedAdapter {
     }
 
     public void updateItems(Set<Integer> items) {
-        if(dataSource == null)
-            return;
-
         currentTime = System.currentTimeMillis() / 1000L;
 
         data.beginBatchedUpdates();
@@ -128,49 +124,44 @@ public class DialogsAdapter extends AdvancedAdapter {
         data.endBatchedUpdates();
     }
 
-    public class DialogHolder extends Holder {
-        private SocialCircularImageView userIcon;
-        private TextView userName;
-        private TextView lastMessage;
-        private TextView dateTime;
-        private TextView unreadCount;
+    private class DialogHolder extends Holder {
+        private SocialCircularImageView userIconImageView;
+        private TextView userNameTextView;
+        private TextView lastMessageTextView;
+        private TextView dateTimeTextView;
+        private TextView unreadCountTextView;
 
-        public DialogHolder(View itemView) {
+        private DialogHolder(View itemView) {
             super(itemView, R.id.root);
-            userIcon = (SocialCircularImageView) itemView.findViewById(R.id.userIcon);
-            userName = (TextView) itemView.findViewById(R.id.userName);
-            lastMessage = (TextView) itemView.findViewById(R.id.lastMessage);
-            dateTime = (TextView) itemView.findViewById(R.id.dateTime);
-            unreadCount = (TextView) itemView.findViewById(R.id.unreadCount);
+            userIconImageView = (SocialCircularImageView) itemView.findViewById(R.id.userIcon);
+            userNameTextView = (TextView) itemView.findViewById(R.id.userName);
+            lastMessageTextView = (TextView) itemView.findViewById(R.id.lastMessage);
+            dateTimeTextView = (TextView) itemView.findViewById(R.id.dateTime);
+            unreadCountTextView = (TextView) itemView.findViewById(R.id.unreadCount);
         }
 
-        public void bind(Dialog dialog, Interlocutor interlocutor) {
-            ImageLoader.getInstance().displayImage(interlocutor.getMediumImage(), userIcon);
-            userIcon.setBorderColor(interlocutor.isOnline()? onlineColor : offlineColor);
-            userIcon.setShowOnlineMark(interlocutor.isOnline(), interlocutor.isOnlineMobile());
-            userName.setText(interlocutor.getFullName());
-            lastMessage.setText(dialog.getMessages().get(0).getContent());
+        private void bind(Dialog dialog, Interlocutor interlocutor, Message lastMessage) {
+            ImageLoader.getInstance().displayImage(interlocutor.getMediumImage(), userIconImageView);
+            userIconImageView.setShowOnlineMark(interlocutor.isOnline(), interlocutor.isOnlineMobile());
+            userNameTextView.setText(interlocutor.getFullName());
+            dateTimeTextView.setText(unixToHumanDate(lastMessage.getDate()));
+            lastMessageTextView.setText(lastMessage.getContent());
             if(dialog.getUnreadCount() > 0) {
-                unreadCount.setText(Integer.toString(dialog.getUnreadCount()));
-                unreadCount.setVisibility(View.VISIBLE);
-            } else unreadCount.setVisibility(View.INVISIBLE);
-            dateTime.setText(unixToHumanDate(dialog.getMessages().get(0).getDate()));
+                unreadCountTextView.setText(Integer.toString(dialog.getUnreadCount()));
+                unreadCountTextView.setVisibility(View.VISIBLE);
+            } else unreadCountTextView.setVisibility(View.INVISIBLE);
         }
 
         @Override
         public void onClick(View v) {
-            synchronized (dataSource) {
-                if(itemClickListener != null)
-                    itemClickListener.onClick(v, data.get(getAdapterPosition()).getId());
-            }
+            if(itemClickListener != null)
+                itemClickListener.onClick(v, data.get(getAdapterPosition()).getId());
         }
 
         @Override
         public boolean onLongClick(View v) {
-            synchronized (dataSource) {
-                if(itemLongClickListener != null)
-                    itemLongClickListener.onClick(v, data.get(getAdapterPosition()).getId());
-            }
+            if(itemLongClickListener != null)
+                itemLongClickListener.onClick(v, data.get(getAdapterPosition()).getId());
             return true;
         }
     }

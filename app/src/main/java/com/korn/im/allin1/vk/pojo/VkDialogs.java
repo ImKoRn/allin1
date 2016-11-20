@@ -1,70 +1,60 @@
 package com.korn.im.allin1.vk.pojo;
 
-import android.annotation.SuppressLint;
-import android.os.Parcel;
-import android.util.Log;
 
-import com.korn.im.allin1.pojo.Dialog;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableTable;
 import com.korn.im.allin1.pojo.Dialogs;
-import com.vk.sdk.api.model.VKApiGetDialogResponse;
-import com.vk.sdk.api.model.VKList;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-/**
- * Created by korn on 14.08.16.
- */
-@SuppressLint("ParcelCreator")
-@SuppressWarnings("unchecked")
-public class VkDialogs extends VKApiGetDialogResponse implements Dialogs<VkDialog> {
-    private static final String TAG = "VkDialogs";
-    private List<VkDialog> dialogs;
-    private Map<Integer, VkInterlocutor> interlocutors;
+public class VkDialogs implements Dialogs<VkDialog, VkMessage> {
+    private static final String DIALOGS_FIELD = "dialogs";
+    private static final String ITEMS_FIELD = "items";
 
-    public VkDialogs(JSONObject from) {
-        parse(from);
+    private static final String UNREAD_DIALOGS_FIELD = "unread_dialogs";
+
+    private final ImmutableTable<Integer, Integer, VkMessage> messages;
+    private final ImmutableMap<Integer, VkDialog> dialogs;
+    private final int unreadDialogsCount;
+
+    public VkDialogs(final Dialogs<VkDialog, VkMessage> dialogs) {
+        this.unreadDialogsCount = dialogs.getUnreadDialogsCount();
+        this.dialogs = ImmutableMap.copyOf(dialogs.getDialogs());
+        this.messages = ImmutableTable.copyOf(dialogs.getMessages());
     }
 
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {}
+    VkDialogs(final JSONObject from) throws JSONException {
+        JSONObject dialogs = from.optJSONObject(DIALOGS_FIELD);
+        this.unreadDialogsCount = dialogs.optInt(UNREAD_DIALOGS_FIELD);
 
-    @Override
-    public VKApiGetDialogResponse parse(JSONObject source) {
-        JSONObject response = source.optJSONObject("response");
-        this.count = response.optInt("count");
-        this.unread_dialogs = response.optInt("unread_dialogs");
-        this.dialogs = new ArrayList<>(new VKList<>(response.optJSONArray("items"), VkDialog.class));
-        parseInterlocutors(response.optJSONArray("profiles"));
-        return this;
-    }
+        JSONArray dialogsArray = dialogs.getJSONArray(ITEMS_FIELD);
 
-    private void parseInterlocutors(JSONArray usersJson) {
-        VkUser user;
-        interlocutors = new HashMap<>(usersJson.length());
-        for (int i = 0; i < usersJson.length(); i++)
-            try {
-                user = new VkUser(usersJson.getJSONObject(i));
-                interlocutors.put(user.getId(), user);
-            } catch (JSONException e) {
-                Log.e(TAG, "One of data corrupted");
-            }
+        ImmutableMap.Builder<Integer, VkDialog> dialogsBuilder = ImmutableMap.builder();
+        ImmutableTable.Builder<Integer, Integer, VkMessage> messagesBuilder = ImmutableTable.builder();
 
-        for (Dialog dialog  : dialogs)
-            if (dialog.isChat())
-                interlocutors.put(dialog.getId(), (VkInterlocutor) dialog);
+        JSONObject jsonDialog;
+        VkDialog dialog;
+        VkMessage message;
+
+        for (int i = 0; i < dialogs.length(); i++) {
+            jsonDialog = dialogsArray.getJSONObject(i);
+            dialog = new VkDialog(jsonDialog);
+            dialogsBuilder.put(dialog.getId(), dialog);
+            message = new VkMessage(jsonDialog.getJSONObject(VkDialog.MESSAGE_FIELD));
+            messagesBuilder.put(message.getDialogId(), message.getId(), message);
+        }
+
+        this.dialogs = dialogsBuilder.build();
+        this.messages = messagesBuilder.build();
     }
 
     @Override
     public int getUnreadDialogsCount() {
-        return unread_dialogs;
+        return unreadDialogsCount;
     }
 
     @Override
@@ -72,33 +62,29 @@ public class VkDialogs extends VKApiGetDialogResponse implements Dialogs<VkDialo
         return dialogs.size();
     }
 
-    public Collection<VkInterlocutor> getInterlocutors() {
-        return interlocutors.values();
-    }
-
-    public VkInterlocutor getInterlocutor(int id) {
-        return interlocutors.get(id);
-    }
-
     @Override
-    public List<VkDialog> getDialogs() {
+    public Map<Integer, VkDialog> getDialogs() {
         return dialogs;
     }
 
     @Override
     public VkDialog getDialog(int id) {
-        for (VkDialog dialog : dialogs)
-            if (dialog.getId() == id)
-                return dialog;
-
-        return null;
+        return dialogs.get(id);
     }
 
-    public void addInterlocutor(VkInterlocutor interlocutor) {
-        interlocutors.put(interlocutor.getId(), interlocutor);
+    @Override
+    public ImmutableTable<Integer, Integer, VkMessage> getMessages() {
+        return messages;
     }
 
-    public void addDialog(VkDialog dialog) {
-        dialogs.add(dialog);
+    @Override
+    public Map<Integer, VkMessage> getDialogMessages(int dialogId) {
+        return messages.row(dialogId);
     }
+
+    @Override
+    public VkMessage getMessage(int dialogId, int messageId) {
+        return messages.get(dialogId, messageId);
+    }
+
 }

@@ -1,56 +1,71 @@
 package com.korn.im.allin1.vk.pojo;
 
-import android.annotation.SuppressLint;
-import android.os.Parcel;
+
 import com.korn.im.allin1.pojo.Dialog;
 import com.korn.im.allin1.pojo.Interlocutor;
-import com.korn.im.allin1.pojo.Message;
-import com.vk.sdk.api.model.VKApiDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 /**
- * Created by korn on 09.08.16.
+ * Represents Vk dialog
  */
-@SuppressLint("ParcelCreator")
-@SuppressWarnings("unchecked")
-public class VkDialog extends VKApiDialog implements Dialog, VkInterlocutor {
-    private volatile int interlocutorId;
-    private final List<VkMessage> messages = Collections.synchronizedList(new LinkedList<VkMessage>());
+public class VkDialog implements Dialog, Interlocutor {
+    static final String MESSAGE_FIELD = "message";
+    private static final String UNREAD_FIELD = "unread";
+    private static final String TITLE_FIELD = "title";
+    private static final String PHOTO50_FIELD = "photo_50";
+    private static final String PHOTO100_FIELD = "photo_100";
+    private static final String PHOTO200_FIELD = "photo_200";
+    private static final String DEFAULT_PHOTO = "https://vk.com/images/camera_50.png";
 
-    private boolean isChat = false;
-    private String fullName = "";
-    private String photo_50 = "";
-    private String photo_100 = "";
-    private String photo_200 = "";
+    private static final String MESSAGE_ID_FIELD = "id";
+    private static final String MESSAGE_USER_ID_FIELD = "user_id";
+    private static final String MESSAGE_CHAT_ID_FIELD = "chat_id";
 
-    private volatile boolean hasNextMessages = true;
-    private volatile int firstOutUnreadIndex = -1;
-    private volatile int firstInUnreadIndex = -1;
+    // General fields
+    private final int id;
+    private volatile int unreadCount;
+    private volatile int lastMessageId;
 
-    public VkDialog(JSONObject source) throws JSONException {
-        parse(source);
-    }
+    // Chat fields
+    private final String fullName;
+    private final String photo50;
+    private final String photo100;
+    private final String photo200;
+    private final boolean isChat;
 
-    public VkDialog(VkMessage vkMessage) {
-        isChat = vkMessage.isChatMessage();
-        interlocutorId = vkMessage.getDialogId();
-        messages.add(0, vkMessage);
-        unread = !vkMessage.isOut() && !vkMessage.isRead() ? 1 : 0;
+    VkDialog(JSONObject dialogJson) throws JSONException {
+        JSONObject messageJson = dialogJson.getJSONObject(MESSAGE_FIELD);
+        int chat_id = messageJson.optInt(MESSAGE_CHAT_ID_FIELD, -1);
+        id = chat_id != -1 ? chat_id + 2000000000 : messageJson.getInt(MESSAGE_USER_ID_FIELD);
+        unreadCount = dialogJson.optInt(UNREAD_FIELD, 0);
+        lastMessageId = messageJson.optInt(MESSAGE_ID_FIELD);
+        isChat = (messageJson.optInt(MESSAGE_CHAT_ID_FIELD, -1) != -1);
+        fullName = messageJson.getString(TITLE_FIELD);
+        photo50 = messageJson.optString(PHOTO50_FIELD, DEFAULT_PHOTO);
+        photo100 = messageJson.optString(PHOTO100_FIELD, DEFAULT_PHOTO);
+        photo200 = messageJson.optString(PHOTO200_FIELD, DEFAULT_PHOTO);
     }
 
     @Override
     public int getId() {
-        return interlocutorId;
+        return id;
+    }
+
+    @Override
+    public boolean isChat() {
+        return isChat;
+    }
+
+    @Override
+    public int getUnreadCount() {
+        return unreadCount;
+    }
+
+    @Override
+    public int getLastMessageId() {
+        return lastMessageId;
     }
 
     @Override
@@ -70,130 +85,21 @@ public class VkDialog extends VKApiDialog implements Dialog, VkInterlocutor {
 
     @Override
     public String getSmallImage() {
-        return photo_50;
+        return photo50;
     }
 
     @Override
     public String getMediumImage() {
-        return photo_100;
+        return photo100;
     }
 
     @Override
     public String getBigImage() {
-        return photo_200;
-    }
-
-    @Override
-    public boolean isChat() {
-        return isChat;
-    }
-
-    @Override
-    public List<VkMessage> getMessages() {
-        return messages;
-    }
-
-    @Override
-    public VkMessage getMessage(int id) {
-        return messages.get(id);
-    }
-
-    @Override
-    public int getUnreadCount() {
-        return unread;
-    }
-
-
-    @Override
-    public long getDate() {
-        return messages.get(0).getDate();
-    }
-
-    @Override
-    public VKApiDialog parse(JSONObject from) throws JSONException {
-        unread = from.optInt("unread");
-
-        from = from.optJSONObject("message");
-        VkMessage message = new VkMessage(from);
-        messages.add(0, message);
-
-        firstInUnreadIndex = !message.isOut() && !message.isRead()? 0 : -1;
-        firstOutUnreadIndex = message.isOut() && !message.isRead()? 0 : -1;
-
-        if(message.isChatMessage()) {
-            isChat = true;
-            interlocutorId = message.getDialogId();
-            fullName = from.optString("title");
-            photo_50 = from.optString("photo_50");
-            photo_100 = from.optString("photo_100");
-            photo_200 = from.optString("photo_200");
-        }
-        else {
-            isChat = false;
-            interlocutorId = message.user_id;
-        }
-        return this;
-    }
-
-    @Override
-    public boolean isHasNextMessages() {
-        return hasNextMessages;
+        return photo200;
     }
 
     @Override
     public boolean equals(Object o) {
-        if(o == null)
-            return false;
-
-        if(o instanceof VkDialog) {
-            VkDialog d = (VkDialog) o;
-            return interlocutorId == d.interlocutorId &&
-                    unread == d.unread;
-        }
-        else return false;
-    }
-
-    @Override
-    public void setOnline(boolean online) {}
-
-    @Override
-    public void setOnlineMobile(boolean online) {}
-
-    public void setUnreadCount(int count) {
-        unread = count;
-    }
-
-    public void setHasNextMessages(boolean hasNextMessages) {
-        this.hasNextMessages = hasNextMessages;
-    }
-
-    public void addMessage(VkMessage message) {
-        synchronized (messages) {
-            messages.add(0, message);
-            if(!message.isRead()) {
-                if (message.isOut())
-                    firstOutUnreadIndex++;
-                else {
-                    unread++;
-                    firstInUnreadIndex++;
-                }
-            }
-        }
-    }
-
-    public int getFirstOutUnreadIndex() {
-        return firstOutUnreadIndex;
-    }
-
-    public void setFirstOutUnreadIndex(int firstOutUnreadIndex) {
-        this.firstOutUnreadIndex = firstOutUnreadIndex;
-    }
-
-    public int getFirstInUnreadIndex() {
-        return firstInUnreadIndex;
-    }
-
-    public void setFirstInUnreadIndex(int firstInUnreadIndex) {
-        this.firstInUnreadIndex = firstInUnreadIndex;
+        return o != null && o instanceof VkDialog && id == ((VkDialog) o).id;
     }
 }
