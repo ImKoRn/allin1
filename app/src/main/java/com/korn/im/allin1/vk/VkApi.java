@@ -5,12 +5,9 @@ import android.util.Pair;
 
 import com.korn.im.allin1.accounts.Api;
 import com.korn.im.allin1.accounts.DataManager;
-import com.korn.im.allin1.accounts.DataPublisher;
-import com.korn.im.allin1.pojo.Dialog;
+import com.korn.im.allin1.errors.NoDataException;
 import com.korn.im.allin1.pojo.Dialogs;
 import com.korn.im.allin1.pojo.Interlocutor;
-import com.korn.im.allin1.pojo.Message;
-import com.korn.im.allin1.pojo.User;
 import com.korn.im.allin1.vk.pojo.VkDialog;
 import com.korn.im.allin1.vk.pojo.VkDialogs;
 import com.korn.im.allin1.vk.pojo.VkMessage;
@@ -20,7 +17,7 @@ import java.util.Map;
 
 import rx.Observable;
 
-class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
+class VkApi implements Api {
     private static final String TAG = "VkApi";
     private final DataManager<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> dataManager;
     private final VkDataLoader dataLoader;
@@ -39,20 +36,12 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
         this.dataLoader = new VkDataLoader();
     }
 
-    // Friends data fetching
-
-    /**
-     * Fetch friends from cache or database if not exist load it from Internet
-     * @return Observable with List of {@link VkUser}
-     * */
+    // Friends data
     @Override
     public Observable<? extends Map<Integer, VkUser>> fetchFriends() {
         return dataManager.getFriends();
     }
 
-    /**
-     * @return Observable with List of {@link VkUser}
-     * */
     @Override
     public void loadFriends() {
         if (!isFriendsLoading) {
@@ -74,13 +63,9 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
         return dataManager.getFriend(id);
     }
 
-    // Dialogs data fetching
-
-    /**
-     * @return Observable with {@link VkDialogs}
-     * */
+    // Dialogs data
     @Override
-    public Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>> fetchDialogs() {
+    public Observable<? extends Pair<? extends Dialogs, ? extends Map<Integer, ? extends Interlocutor>>> fetchDialogs() {
         return dataManager.getDialogs();
     }
 
@@ -89,10 +74,10 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
         if (!isDialogsLoading) {
             isDialogsLoading = true;
             Log.i(TAG, "loadDialogs: dialogs start loading");
-            dataPublisher.publishDialogsWhenArrive(dataLoader.loadDialogs(-1, VkRequestUtil.DEFAULT_DIALOGS_COUNT)
+            dataPublisher.publishDialogsWhenArrive(dataLoader.loadDialogs(0, VkRequestUtil.DEFAULT_DIALOGS_COUNT)
                                                              .doOnError(throwable -> isDialogsLoading = false)
                                                              .flatMap(dialogs -> {
-                                                                 Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>>
+                                                                 Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>>
                                                                          savedDialogs = saveDialogs(dialogs, true);
                                                                  isDialogsLoading = false;
                                                                  hasMoreDialogsToUpdate = (dialogs.first.size() == VkRequestUtil.DEFAULT_DIALOGS_COUNT);
@@ -110,7 +95,7 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
             dataPublisher.publishDialogsWhenArrive(dataLoader.loadDialogs(vkCache.getNextDialogsStamp(), VkRequestUtil.DEFAULT_DIALOGS_COUNT)
                                                              .doOnError(throwable -> isDialogsLoading = false)
                                                              .flatMap(dialogs -> {
-                                                                 Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>>
+                                                                 Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>>
                                                                          savedDialogs = saveDialogs(dialogs, true);
                                                                  isDialogsLoading = false;
                                                                  hasMoreDialogsToUpdate = (dialogs.first.size() == VkRequestUtil.DEFAULT_DIALOGS_COUNT);
@@ -131,16 +116,37 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
     }
 
     @Override
+    public Observable<Map<Integer, VkMessage>> fetchMessages(int id) {
+        return dataManager.getMessages(id);
+    }
+
+    @Override
     public Observable<Interlocutor> fetchInterlocutor(int id) {
         return dataManager.getInterlocutor(id);
     }
 
-    private Observable<VkUser> loadUser(int id) {
-        return dataLoader.loadUsers(id);
+    @Override
+    public Observable<? extends Interlocutor> loadInterlocutor(int id) {
+        return dataLoader.loadUsers(id)
+                         .flatMap(this::saveInterlocutors)
+                         .flatMap(integerMap -> {
+                             Interlocutor interlocutor = integerMap.get(id);
+                             if (interlocutor == null) return Observable.error(new NoDataException());
+                             else return Observable.just(interlocutor);
+                         });
+    }
+
+    @Override
+    public Observable<Map<Integer, ? extends Interlocutor>> loadInterlocutors(int... id) {
+        return dataLoader.loadUsers(id).flatMap(this::saveInterlocutors);
+    }
+
+    @Override
+    public Observable<Map<Integer, Interlocutor>> fetchInterlocutors() {
+        return dataManager.getInterlocutors();
     }
 
     // Check to next load methods
-
     @Override
     public boolean hasMoreDialogsToUpdate() {
         return hasMoreDialogsToUpdate;
@@ -157,8 +163,7 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
     }
 
     @Override
-    public DataPublisher<? extends Message, ? extends User, ? extends Dialogs, ? extends Dialog, ? extends Interlocutor>
-    getDataPublisher() {
+    public VkDataPublisher getDataPublisher() {
         return dataPublisher;
     }
 
@@ -167,22 +172,22 @@ class VkApi implements Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor>
         return isFriendsLoading;
     }
 
-    private Observable<Map<Integer, Interlocutor>> fetchInterlocutors() {
-        return dataManager.getInterlocutors();
+    // Save methods
+    private Observable<? extends Map<Integer, VkUser>> saveFriends(Map<Integer, VkUser> users, boolean rewrite) {
+        if (users.size() > 0)
+            dataManager.saveFriends(users, rewrite);
+        return dataManager.getFriends();
     }
 
-    // Save methods
-
-    private Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>>
-    saveDialogs(Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>> dialogs, boolean rewrite) {
+    private Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>>
+    saveDialogs(Pair<VkDialogs, Map<Integer, Interlocutor>> dialogs, boolean rewrite) {
         if (dialogs.first.size() > 0)
             dataManager.saveDialogs(dialogs, rewrite);
         return dataManager.getDialogs();
     }
 
-    private Observable<? extends Map<Integer, VkUser>> saveFriends(Map<Integer, VkUser> users, boolean rewrite) {
-        if (users.size() > 0)
-            dataManager.saveFriends(users, rewrite);
-        return dataManager.getFriends();
+    private Observable<Map<Integer, Interlocutor>> saveInterlocutors(Map<Integer, ? extends Interlocutor> interlocutors) {
+        if (interlocutors.size() > 0) dataManager.saveInterlocutors(interlocutors, false);
+        return dataManager.getInterlocutors();
     }
 }

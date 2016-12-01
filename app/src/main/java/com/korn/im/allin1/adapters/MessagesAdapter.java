@@ -93,9 +93,10 @@ public class MessagesAdapter extends AdvancedAdapter {
         ((MessageHolder) holder).bind(data.get(position));
     }
 
-    public void setData(Collection<Message> messages) {
+    public void setData(Collection<? extends Message> messages) {
         data.beginBatchedUpdates();
-        data.addAll(messages);
+        for (Message message : messages)
+            data.add(message);
         data.endBatchedUpdates();
     }
 

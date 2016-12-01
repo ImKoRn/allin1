@@ -1,4 +1,4 @@
-package com.korn.im.allin1.ui.activitys;
+package com.korn.im.allin1.ui.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,7 +13,7 @@ import android.widget.Spinner;
 
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.accounts.AccountManager;
-import com.korn.im.allin1.adapters.PagerAdapter;
+import com.korn.im.allin1.adapters.FragmentsPagerAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,15 +24,14 @@ public class MainActivity extends AppCompatActivity {
         checkLogIn();
         setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
 
         initToolbar();
 
-        PagerAdapter pagerAdapter = new PagerAdapter(this, getSupportFragmentManager());
+        FragmentsPagerAdapter fragmentsPagerAdapter = new FragmentsPagerAdapter(this, getSupportFragmentManager());
         ViewPager viewPager = (ViewPager) findViewById(R.id.container);
-        viewPager.setAdapter(pagerAdapter);
-        viewPager.setOffscreenPageLimit(PagerAdapter.ITEM_COUNT);
+        viewPager.setAdapter(fragmentsPagerAdapter);
+        viewPager.setOffscreenPageLimit(FragmentsPagerAdapter.ITEM_COUNT);
 
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
@@ -61,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.action_logout) {
-            AccountManager.getInstance().getAccount().logOut();
+            AccountManager.getInstance().edit().closeAllAccounts();
             startLoginActivity();
             return true;
         }

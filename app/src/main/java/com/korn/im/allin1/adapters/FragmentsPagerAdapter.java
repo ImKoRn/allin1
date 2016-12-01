@@ -1,5 +1,6 @@
 package com.korn.im.allin1.adapters;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -12,22 +13,19 @@ import com.korn.im.allin1.ui.fragments.FriendsFragment;
 import com.korn.im.allin1.ui.fragments.DialogsFragment;
 import com.korn.im.allin1.ui.fragments.OnlineFriendsFragment;
 
-/**
- * Created by korn on 03.08.16.
- */
-public class PagerAdapter extends FragmentPagerAdapter {
+public class FragmentsPagerAdapter extends FragmentPagerAdapter {
     private static final int FRIENDS_POSITION = 0;
-    private static final int ONLINE_FRIENDS_POSITION = 2;
-    private static final int DIALOGS_POSITION = 1;
+    private static final int ONLINE_FRIENDS_POSITION = 1;
+    private static final int DIALOGS_POSITION = 2;
 
-    public static final int ITEM_COUNT = 1;
+    public static final int ITEM_COUNT = 3;
 
 
     private String friendsSection;
     private String onlineFriendsSection;
     private String messagesSection;
 
-    public PagerAdapter(Activity activity, FragmentManager fm) {
+    public FragmentsPagerAdapter(Activity activity, FragmentManager fm) {
         super(fm);
         friendsSection = activity.getResources().getString(R.string.friends_section_title);
         onlineFriendsSection = activity.getResources().getString(R.string.online_friends_section_title);
@@ -57,6 +55,7 @@ public class PagerAdapter extends FragmentPagerAdapter {
         return ITEM_COUNT;
     }
 
+    @SuppressLint("DefaultLocale")
     @Override
     public CharSequence getPageTitle(int position) {
         switch (position) {
@@ -67,7 +66,7 @@ public class PagerAdapter extends FragmentPagerAdapter {
             case DIALOGS_POSITION:
                 return messagesSection;
         }
-        return null;
+        throw new IllegalArgumentException(String.format("No element on position: %d, item count: %d", position, ITEM_COUNT));
     }
 
     @Override

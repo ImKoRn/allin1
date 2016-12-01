@@ -23,7 +23,6 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 
 /**
@@ -82,7 +81,9 @@ public class DialogsAdapter extends AdvancedAdapter {
         Dialog dialog = data.get(position);
         if (interlocutors.get(dialog.getId()) == null)
             dialog.getId();
-        ((DialogHolder) holder).bind(dialog, interlocutors.get(dialog.getId()), messages.get(dialog.getId(), dialog.getLastMessageId()));
+        Interlocutor interlocutor = interlocutors.get(dialog.getId());
+        Message message = messages.get(dialog.getId(), dialog.getLastMessageId());
+        ((DialogHolder) holder).bind(dialog, interlocutor, message);
     }
 
     @Override
@@ -104,24 +105,22 @@ public class DialogsAdapter extends AdvancedAdapter {
     }
 
     public void setData(Dialogs<Dialog, Message> dialogs, Map<Integer, ? extends Interlocutor> interlocutors) {
-        currentTime = System.currentTimeMillis() / 1000L;
         this.interlocutors = interlocutors;
         this.messages = dialogs.getMessages();
         data.beginBatchedUpdates();
+        for (int i = 0; i < data.size(); i++) {
+            Dialog dialog = data.get(i);
+            if (dialogs.getDialogs().containsKey(dialog.getId())) {
+                data.recalculatePositionOfItemAt(i);
+            } else data.removeItemAt(i--);
+        }
         data.addAll(dialogs.getDialogs().values());
         data.endBatchedUpdates();
+        currentTime = System.currentTimeMillis() / 1000L;
     }
 
     public void clear() {
         data.clear();
-    }
-
-    public void updateItems(Set<Integer> items) {
-        currentTime = System.currentTimeMillis() / 1000L;
-
-        data.beginBatchedUpdates();
-
-        data.endBatchedUpdates();
     }
 
     private class DialogHolder extends Holder {

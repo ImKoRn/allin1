@@ -100,6 +100,6 @@ public class VkDialog implements Dialog, Interlocutor {
 
     @Override
     public boolean equals(Object o) {
-        return o != null && o instanceof VkDialog && id == ((VkDialog) o).id;
+        return o != null && o instanceof VkDialog && id == ((VkDialog) o).id && unreadCount == (((VkDialog) o).unreadCount);
     }
 }

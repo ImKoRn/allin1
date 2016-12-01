@@ -20,11 +20,11 @@ public class DataManager<
         TDialog extends Dialog,
         TInterlocutor extends Interlocutor> {
 
-    private final DbManager<TUser, TDialogs, TDialog, TInterlocutor> dbManager;
-    private final Cache<TUser, TDialogs, TDialog, TInterlocutor> cache;
+    private final DbManager<TMessage,TUser, TDialogs, TDialog, TInterlocutor> dbManager;
+    private final Cache<TMessage, TUser, TDialogs, TDialog, TInterlocutor> cache;
 
-    public DataManager(Cache<TUser, TDialogs, TDialog, TInterlocutor> cache,
-                       DbManager<TUser, TDialogs, TDialog, TInterlocutor> dbManager) {
+    public DataManager(Cache<TMessage, TUser, TDialogs, TDialog, TInterlocutor> cache,
+                       DbManager<TMessage,TUser, TDialogs, TDialog, TInterlocutor> dbManager) {
         this.cache = cache;
         this.dbManager = dbManager;
     }
@@ -46,15 +46,16 @@ public class DataManager<
                                                 .doOnNext(cache::saveFriend));
     }
 
-    public Observable<Pair<TDialogs, ? extends Map<Integer, ? extends TInterlocutor>>> getDialogs() {
+    public Observable<Pair<TDialogs, Map<Integer, TInterlocutor>>> getDialogs() {
         return cache.getDialogs()
-                    .onErrorResumeNext(dbManager.getDialogs().doOnNext((dialogsAndInterlocutors) -> {
-                        cache.saveDialogs(dialogsAndInterlocutors.first, false);
-                        cache.saveInterlocutors(dialogsAndInterlocutors.second, false);
-                    }));
+                    .onErrorResumeNext(dbManager.getDialogs()
+                                                .doOnNext((dialogsAndInterlocutors) -> {
+                                                    cache.saveDialogs(dialogsAndInterlocutors.first, false);
+                                                    cache.saveInterlocutors(dialogsAndInterlocutors.second, false);
+                                                }));
     }
 
-    public void saveDialogs(Pair<TDialogs, ? extends Map<Integer, ? extends TInterlocutor>> dialogsAndInterlocutors, boolean rewrite) {
+    public void saveDialogs(Pair<TDialogs, Map<Integer, TInterlocutor>> dialogsAndInterlocutors, boolean rewrite) {
         dbManager.saveDialogs(dialogsAndInterlocutors.first);
         dbManager.saveInterlocutors(dialogsAndInterlocutors.second);
         cache.saveDialogs(dialogsAndInterlocutors.first, rewrite);
@@ -63,10 +64,9 @@ public class DataManager<
 
     public Observable<TDialog> getDialog(int id) {
         return cache.getDialog(id)
-                    .onErrorResumeNext(
-                            dbManager.getDialog(id)
-                                     .observeOn(Schedulers.computation())
-                                     .doOnNext(this::saveDialog));
+                    .onErrorResumeNext(dbManager.getDialog(id)
+                                                .observeOn(Schedulers.computation())
+                                                .doOnNext(this::saveDialog));
     }
 
     public void saveDialog(TDialog dialog) {
@@ -76,13 +76,12 @@ public class DataManager<
 
     public Observable<TInterlocutor> getInterlocutor(int id) {
         return cache.getInterlocutor(id)
-                    .onErrorResumeNext(
-                            dbManager.getInterlocutor(id)
-                                     .observeOn(Schedulers.computation())
-                                     .doOnNext(this::saveInterlocutor));
+                    .onErrorResumeNext(dbManager.getInterlocutor(id)
+                                                .observeOn(Schedulers.computation())
+                                                .doOnNext(this::saveInterlocutor));
     }
 
-    public void saveInterlocutors(Map<Integer, TInterlocutor> interlocutors, boolean rewrite) {
+    public void saveInterlocutors(Map<Integer, ? extends TInterlocutor> interlocutors, boolean rewrite) {
         dbManager.saveInterlocutors(interlocutors);
         cache.saveInterlocutors(interlocutors, rewrite);
     }
@@ -95,5 +94,11 @@ public class DataManager<
     public Observable<Map<Integer, TInterlocutor>> getInterlocutors() {
         return cache.getInterlocutors()
                     .onErrorResumeNext(dbManager.getInterlocutors());
+    }
+
+    public Observable<Map<Integer, TMessage>> getMessages(int id) {
+        return cache.getMessages(id)
+                    .onErrorResumeNext(dbManager.getMessages(id)
+                                                .doOnNext(messages -> cache.saveMessages(id, messages)));
     }
 }

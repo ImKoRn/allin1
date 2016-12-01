@@ -13,7 +13,6 @@ import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +30,7 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
     private final AtomicReference<AsyncSubject<Map<Integer, VkUser>>> loadFriendsSubject
             = new AtomicReference<>(null);
     //Dialogs downloading
-    private final AtomicReference<AsyncSubject<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>>> loadDialogsSubject
+    private final AtomicReference<AsyncSubject<Pair<VkDialogs, Map<Integer, Interlocutor>>>> loadDialogsSubject
             = new AtomicReference<>(null);
 
     VkDataLoader() {}
@@ -74,38 +73,36 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
     }
 
     @Override
-    public Observable<VkUser> loadUsers(int... id) {
-        return Observable.create((Observable.OnSubscribe<JSONObject>) subscriber -> VkRequestUtil
+    public Observable<Map<Integer, VkUser>> loadUsers(int... id) {
+        if (id.length == 0) return Observable.empty();
+
+        return Observable.create(subscriber -> VkRequestUtil
                 .createUserRequest(id)
                 .executeWithListener(new VKRequest.VKRequestListener() {
-                    @Override
-                    public void onComplete(VKResponse response) {
-                        subscriber.onNext(response.json);
-                        subscriber.onCompleted();
-                    }
+                                         @Override
+                                         public void onComplete(VKResponse response) {
+                                             parsingExecutorService.execute(() -> {
+                                                 try {
+                                                     subscriber.onNext(VkJsonParser.parseUsers(response.json));
+                                                     subscriber.onCompleted();
+                                                 } catch (JSONException e) {
+                                                     subscriber.onError(e);
+                                                 }
+                                             });
+                                         }
 
-                    @Override
-                    public void onError(VKError error) {
-                        subscriber.onError(new Error(error.errorMessage));
-                    }
-                }))
-                         .map(jsonObject -> {
-                             try {
-                                 return new VkUser(jsonObject
-                                                           .optJSONArray(VkJsonParser.RESPONSE)
-                                                           .optJSONObject(0));
-                             } catch (JSONException e) {
-                                 e.printStackTrace();
-                                 throw new RuntimeException(e);
-                             }
-                         });
+                                         @Override
+                                         public void onError(VKError error) {
+                                             subscriber.onError(new RuntimeException(error.errorMessage));
+                                         }
+                                     }));
     }
 
     @Override
-    public Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>>
+    public Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>>
     loadDialogs(int lastDialogStamp, int size) {
         for (;;) {
-            AsyncSubject<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>> subject = loadDialogsSubject.get();
+            AsyncSubject<Pair<VkDialogs, Map<Integer, Interlocutor>>> subject = loadDialogsSubject.get();
             if (subject != null) return subject.asObservable();
             else if (loadDialogsSubject.compareAndSet(null, subject = AsyncSubject.create()))
                 loadDialogsRequest(subject, lastDialogStamp, size);
@@ -113,10 +110,10 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
     }
 
     private void loadDialogsRequest(
-            AsyncSubject<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>> subject,
+            AsyncSubject<Pair<VkDialogs, Map<Integer, Interlocutor>>> subject,
             int lastDialogStamp,
             int size) {
-        VkRequestUtil.createDialogsRequest(lastDialogStamp, size)
+        VkRequestUtil.createDialogsRequest(lastDialogStamp == 0 ? 0 : 1, lastDialogStamp, size)
                      .executeWithListener(new VKRequest.VKRequestListener() {
                          @Override
                          public void onComplete(VKResponse response) {

@@ -157,9 +157,9 @@ public class VkLongPullService extends IntentService {
         if(service != null)
             return;
 
-        service = new Retrofit.Builder()
+        service = new Retrofit.Editor()
                 .baseUrl("http://place/")
-                .client(new OkHttpClient.Builder()
+                .client(new OkHttpClient.Editor()
                         .readTimeout(1, TimeUnit.MINUTES)
                         .connectTimeout(1, TimeUnit.MINUTES)
                         .writeTimeout(1, TimeUnit.MINUTES)

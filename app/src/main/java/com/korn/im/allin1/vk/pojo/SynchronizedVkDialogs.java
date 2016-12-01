@@ -91,11 +91,26 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog, VkMessage> {
 
     public int nextDialogsStamp() {
         synchronized (dialogs) {
-            int stamp = -1;
+            int stamp = 0;
             for (Map.Entry<Integer, VkDialog> entry : dialogs.entrySet())
-                if (stamp > entry.getValue().getLastMessageId() || stamp == -1)
+                if (stamp > entry.getValue().getLastMessageId() || stamp == 0)
                     stamp = entry.getValue().getLastMessageId();
             return stamp;
+        }
+    }
+
+    public void addMessages(Table<Integer, Integer, VkMessage> messages,
+                            boolean rewrite) {
+        synchronized (this.messages) {
+            if (rewrite) this.messages.clear();
+            this.messages.putAll(messages);
+        }
+    }
+
+    public void addMessagesToDialog(int id,
+                                    Map<Integer, ? extends VkMessage> messages) {
+        synchronized (this.messages) {
+            this.messages.row(id).putAll(messages);
         }
     }
 }

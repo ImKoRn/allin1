@@ -11,6 +11,7 @@ import com.korn.im.allin1.pojo.Interlocutor;
 import com.korn.im.allin1.vk.pojo.SynchronizedVkDialogs;
 import com.korn.im.allin1.vk.pojo.VkDialog;
 import com.korn.im.allin1.vk.pojo.VkDialogs;
+import com.korn.im.allin1.vk.pojo.VkMessage;
 import com.korn.im.allin1.vk.pojo.VkUser;
 
 import java.util.Collections;
@@ -19,10 +20,9 @@ import java.util.Map;
 
 import rx.Observable;
 import rx.Subscriber;
-import rx.functions.Func2;
 
 @SuppressLint("UseSparseArrays")
-class VkCache implements Cache<VkUser, VkDialogs, VkDialog, Interlocutor> {
+class VkCache implements Cache<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
 
     private volatile boolean hasFriends = false;
     private final Map<Integer, VkUser> friends = Collections.synchronizedMap(new HashMap<>());
@@ -87,26 +87,35 @@ class VkCache implements Cache<VkUser, VkDialogs, VkDialog, Interlocutor> {
     }
 
     @Override
-    public Observable<Pair<VkDialogs, ? extends Map<Integer, ? extends Interlocutor>>> getDialogs() {
-        return Observable.zip(Observable.create(subscriber -> {
+    public Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>> getDialogs() {
+        return Observable.create(subscriber -> {
             if (!hasDialogs) {
                 subscriber.onError(new NoDataException());
                 return;
             }
-            subscriber.onNext(dialogs.getCopy());
-            subscriber.onCompleted();
-        }), getInterlocutors(), new Func2<VkDialogs, Map<Integer, Interlocutor>, Pair<VkDialogs,? extends Map<Integer,Interlocutor>>>() {
-            @Override
-            public Pair<VkDialogs, ? extends Map<Integer, Interlocutor>> call(VkDialogs vkDialogs, Map<Integer,Interlocutor> interlocutorMap) {
-                return Pair.create(vkDialogs, interlocutorMap);
+            VkDialogs dialogsSnapshot = dialogs.getCopy();
+            ImmutableMap.Builder<Integer, Interlocutor> interlocutors = new ImmutableMap.Builder<>();
+            synchronized (this.interlocutors) {
+                interlocutors.putAll(this.interlocutors);
             }
+            synchronized (this.friends) {
+                interlocutors.putAll(this.friends);
+            }
+            for (Map.Entry<Integer, VkDialog> entry : dialogsSnapshot.getDialogs().entrySet())
+                if (entry.getValue().isChat())
+                    interlocutors.put(entry.getValue().getId(), entry.getValue());
+
+            Pair<VkDialogs, Map<Integer, Interlocutor>> res = Pair.create(dialogsSnapshot, interlocutors.build());
+            subscriber.onNext(res);
+            subscriber.onCompleted();
         });
     }
 
     @Override
     public void saveDialogs(final @NonNull VkDialogs dialogs, final boolean rewrite) {
         this.dialogs.addDialogs(dialogs.getDialogs(), rewrite);
-        hasFriends = true;
+        this.dialogs.addMessages(dialogs.getMessages(), rewrite);
+        hasDialogs = true;
     }
 
     @Override
@@ -129,10 +138,32 @@ class VkCache implements Cache<VkUser, VkDialogs, VkDialog, Interlocutor> {
     }
 
     @Override
+    public Observable<Map<Integer, VkMessage>> getMessages(final int id) {
+        return Observable.create(subscriber -> {
+            subscriber.onNext(dialogs.getDialogMessages(id));
+            subscriber.onCompleted();
+        });
+    }
+
+    @Override
+    public void saveMessages(final int id, final Map<Integer, ? extends VkMessage> messages) {
+        dialogs.addMessagesToDialog(id, messages);
+    }
+
+    @Override
     public Observable<Interlocutor> getInterlocutor(final int id) {
         return Observable.create(subscriber -> {
-            Interlocutor interlocutor;
-            if (!hasInterlocutors || (interlocutor = interlocutors.get(id)) == null) {
+            Interlocutor interlocutor = null;
+            if (hasFriends)
+                interlocutor = friends.get(id);
+
+            if (interlocutor == null && hasInterlocutors)
+                interlocutor = interlocutors.get(id);
+
+            if (interlocutor == null && hasDialogs)
+                interlocutor = dialogs.getDialog(id);
+
+            if (interlocutor == null) {
                 subscriber.onError(new NoDataException());
                 return;
             }
@@ -144,15 +175,16 @@ class VkCache implements Cache<VkUser, VkDialogs, VkDialog, Interlocutor> {
     @Override
     public Observable<Map<Integer, Interlocutor>> getInterlocutors() {
         return Observable.create(subscriber -> {
-            if (!hasInterlocutors) {
-                subscriber.onError(new NoDataException());
-                return;
+            ImmutableMap.Builder<Integer, Interlocutor> snapshot = ImmutableMap.builder();
+            if (hasInterlocutors) synchronized (interlocutors) {
+                snapshot.putAll(interlocutors);
             }
-            Map<Integer, Interlocutor> snapshot;
-            synchronized (interlocutors) {
-                snapshot = ImmutableMap.copyOf(interlocutors);
+
+            if (hasFriends) synchronized (friends) {
+                snapshot.putAll(friends);
             }
-            subscriber.onNext(snapshot);
+
+            subscriber.onNext(snapshot.build());
             subscriber.onCompleted();
         });
     }

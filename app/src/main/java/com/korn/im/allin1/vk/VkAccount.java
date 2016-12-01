@@ -5,33 +5,26 @@ import android.content.Intent;
 import android.support.annotation.Nullable;
 
 import com.korn.im.allin1.accounts.Account;
+import com.korn.im.allin1.accounts.AccountType;
 import com.korn.im.allin1.accounts.Api;
-import com.korn.im.allin1.pojo.Interlocutor;
-import com.korn.im.allin1.vk.pojo.VkDialog;
-import com.korn.im.allin1.vk.pojo.VkDialogs;
-import com.korn.im.allin1.vk.pojo.VkMessage;
-import com.korn.im.allin1.vk.pojo.VkUser;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKAccessTokenTracker;
 import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 
-public class VkAccount implements Account<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
+public class VkAccount extends Account {
     private VkApi api;
-    public static final int ACCOUNT_TYPE = 1;
 
     private VKAccessTokenTracker vkAccessTokenTracker = new VKAccessTokenTracker() {
         @Override
         public void onVKAccessTokenChanged(@Nullable VKAccessToken oldToken, @Nullable VKAccessToken newToken) {
-            if(newToken == null)
-                logOut();
+            if(newToken == null) logOut();
         }
     };
 
     public VkAccount() {
-        if(isLoggedIn())
-            initAccount(VKAccessToken.currentToken());
+        if(isLoggedIn()) initAccount(VKAccessToken.currentToken());
     }
 
     @Override
@@ -65,7 +58,12 @@ public class VkAccount implements Account<VkMessage, VkUser, VkDialogs, VkDialog
     }
 
     @Override
-    public Api<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> getApi() {
+    public Api getApi() {
         return api;
+    }
+
+    @Override
+    public AccountType getAccountType() {
+        return AccountType.Vk;
     }
 }

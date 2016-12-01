@@ -4,13 +4,158 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
-    <include layout="@layout/dialog_toolbar"/>
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/appbar"
+        android:theme="@style/AppTheme.AppBarOverlay"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            app:popupTheme="@style/AppTheme.PopupOverlay"
+            android:layout_height="?attr/actionBarSize">
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_gravity="start"
+                android:clickable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:id="@+id/interlocutorName"
+                    android:textSize="@dimen/main_text_size"
+                    android:textColor="@color/white"
+                    android:maxLines="1"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:ellipsize="marquee"
+                    android:layout_centerVertical="true"
+                    android:layout_toRightOf="@+id/interlocutorIcon"
+                    android:layout_toEndOf="@+id/interlocutorIcon"
+                    android:gravity="start|center_vertical" />
+
+                <com.korn.im.allin1.ui.customview.SocialCircularImageView
+                    android:id="@+id/interlocutorIcon"
+                    app:civ_border="false"
+                    android:layout_width="@dimen/toolbarImage"
+                    android:layout_height="@dimen/toolbarImage"
+                    app:social_enableOnlineMark="true"
+                    app:social_onlineMarkBorderRadius="6dp"
+                    app:social_onlineMarkCircleRadius="4dp"
+                    app:social_onlineMarkBorderColor="@color/colorPrimary"
+                    app:social_onlineMarkCircleColor="@color/colorOnline"
+
+                    app:social_enableMobileMark="true"
+                    app:social_onlineMobileMarkBorderWidth="12dp"
+                    app:social_onlineMobileMarkBorderHeight="16dp"
+                    app:social_onlineMobileMarkBorderSize="2dp"
+                    app:social_onlineMobileMarkBorderColor="@color/colorPrimary"
+                    app:social_onlineMobileMarkInsideColor="@color/colorOnline"
+                    app:social_onlineMobileMarkBorderRadius="3dp"
+                    app:social_onlineMobileMarkInsideRadius="2dp"
+                    android:layout_marginLeft="11dp"
+                    android:layout_marginStart="11dp"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"/>
+            </RelativeLayout>
+        </android.support.v7.widget.Toolbar>
+    </android.support.design.widget.AppBarLayout>
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/messages_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@+id/appbar"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
         android:layout_above="@+id/outMessageSection"
-        android:layout_below="@+id/appbar"/>
+        android:visibility="gone"/>
 
-    <include layout="@layout/messaging_bottom_bar"/>
+    <LinearLayout
+        android:id="@+id/outMessageSection"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:background="@android:color/white"
+        android:layout_gravity="bottom"
+        android:layout_height="wrap_content"
+        android:elevation="@dimen/bottom_bar_elevation"
+        android:layout_alignParentBottom="true"
+        android:minHeight="@dimen/bottom_bar_min_height">
+
+        <ImageButton
+            android:id="@+id/attachmentsBtn"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_height="56dp"
+            android:layout_width="56dp"
+            android:src="@drawable/attachments"
+            android:layout_gravity="bottom"/>
+
+        <RelativeLayout
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:minHeight="56dp"
+            android:layout_weight="1">
+
+            <EditText
+                android:id="@+id/messageText"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:inputType="textMultiLine"
+                android:hint="@string/type_message_hint"
+                android:background="@android:color/transparent"
+                android:textColorHint="@android:color/darker_gray"
+                android:padding="5dp"
+                android:minLines="1"
+                android:maxLines="4"
+                android:layout_gravity="center_vertical"
+                android:layout_alignParentTop="false"
+                android:layout_alignParentLeft="false"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_alignParentBottom="false" />
+
+            <ProgressBar
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/sendingProgressBar"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:max="100"
+                android:visibility="invisible"
+                android:indeterminate="false"
+                android:progress="50" />
+        </RelativeLayout>
+
+        <ImageButton
+            android:id="@+id/sendButton"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_height="56dp"
+            android:layout_width="56dp"
+            android:src="@drawable/send"
+            android:layout_gravity="bottom"/>
+
+    </LinearLayout>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:indeterminate="true"/>
+
 </RelativeLayout>

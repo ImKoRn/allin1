@@ -14,7 +14,6 @@
         android:padding="@dimen/list_item_left_and_right_padding"
         android:background="?attr/selectableItemBackground">
         <com.korn.im.allin1.ui.customview.SocialCircularImageView
-            android:layout_width="@dimen/icon_size"
             android:layout_height="@dimen/icon_size"
             android:id="@+id/userIcon"
             android:src="@mipmap/ic_launcher"
@@ -32,14 +31,15 @@
             app:social_onlineMobileMarkBorderRadius="3dp"
             app:social_onlineMobileMarkInsideRadius="2dp"
 
-            android:layout_centerVertical="true"
             android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentStart="true"
+            android:layout_width="56dp"/>
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginStart="@dimen/list_item_text_padding"
+            android:layout_marginLeft="@dimen/list_item_text_padding"
             android:layout_toRightOf="@+id/userIcon"
             android:layout_toEndOf="@+id/userIcon"
             android:layout_alignParentRight="true"

@@ -20,10 +20,10 @@ import android.widget.Toast;
 
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.accounts.AccountManager;
+import com.korn.im.allin1.accounts.AccountType;
 import com.korn.im.allin1.adapters.FriendsAdapter;
 import com.korn.im.allin1.common.RecyclerPauseOnScrollListener;
 import com.korn.im.allin1.pojo.User;
-import com.korn.im.allin1.vk.pojo.VkUser;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.turingtechnologies.materialscrollbar.DragScrollBar;
 
@@ -41,7 +41,7 @@ public class FriendsFragment extends Fragment {
     private static final String FRIENDS_MANAGER_STATE = "friends_llm_state";
     private static final String TAG = "FriendsFragment";
 
-    private FriendsAdapter friendsAdapter;
+    // Ui
     private SwipeRefreshLayout swipeRefreshFriendsLayout;
 
     // Subscriptions
@@ -51,6 +51,7 @@ public class FriendsFragment extends Fragment {
     // Members
     private Parcelable managerLastState;
     private LinearLayoutManager llm;
+    private FriendsAdapter friendsAdapter;
 
     public FriendsFragment() {}
 
@@ -74,7 +75,7 @@ public class FriendsFragment extends Fragment {
         swipeRefreshFriendsLayout.setOnRefreshListener(() -> {
             swipeRefreshFriendsLayout.setRefreshing(true);
             AccountManager.getInstance()
-                          .getAccount()
+                          .getAccount(AccountType.Vk)
                           .getApi()
                           .loadFriends();
         });
@@ -121,62 +122,6 @@ public class FriendsFragment extends Fragment {
         swipeRefreshFriendsLayout.setRefreshing(isFriendsLoading());
     }
 
-    private void fetchFriends() {
-        AccountManager.getInstance()
-                      .getAccount()
-                      .getApi()
-                      .fetchFriends()
-                      .flatMap((Func1<Map<Integer, VkUser>, Observable<Collection<? extends User>>>)
-                                       integerVkUserMap -> Observable.just(integerVkUserMap.values()))
-                      .subscribeOn(Schedulers.computation())
-                      .observeOn(AndroidSchedulers.mainThread())
-                      .subscribe(users -> {
-                                     friendsAdapter.setData(users);
-                                     swipeRefreshFriendsLayout.setRefreshing(false);
-                                 },
-                                 throwable -> Toast.makeText(FriendsFragment.this.getActivity(),
-                                                             throwable.getMessage(),
-                                                             Toast.LENGTH_SHORT).show());
-    }
-
-    private Subscription subscribeOnFriendsUpdate() {
-        return AccountManager.getInstance()
-                             .getAccount()
-                             .getApi()
-                             .getDataPublisher()
-                             .friendsObservable()
-                             .flatMap((Func1<Map<Integer, ? extends User>, Observable<Collection<? extends User>>>)
-                                              friends -> Observable.just(friends.values()))
-                             .subscribeOn(Schedulers.computation())
-                             .observeOn(AndroidSchedulers.mainThread())
-                             .subscribe(users -> {
-                                            Log.i(TAG, "onResume: friends arrived");
-                                            friendsAdapter.setData(users);
-                                            swipeRefreshFriendsLayout.setRefreshing(false);
-                                        },
-                                        throwable -> Toast.makeText(FriendsFragment.this.getActivity(),
-                                                                    throwable.getMessage(),
-                                                                    Toast.LENGTH_SHORT).show());
-    }
-
-    private Subscription subscribeOnFriendsErrors() {
-        return AccountManager.getInstance()
-                             .getAccount()
-                             .getApi()
-                             .getDataPublisher()
-                             .friendsErrorsObservable()
-                             .observeOn(AndroidSchedulers.mainThread())
-                             .subscribe(throwable -> {
-                                            Toast.makeText(FriendsFragment.this.getActivity(),
-                                                           throwable.getMessage(),
-                                                           Toast.LENGTH_SHORT).show();
-                                            swipeRefreshFriendsLayout.setRefreshing(false);
-                                        },
-                                        throwable -> Toast.makeText(FriendsFragment.this.getActivity(),
-                                                                    throwable.getMessage(),
-                                                                    Toast.LENGTH_SHORT).show());
-    }
-
     @Override
     public void onPause() {
         super.onPause();
@@ -199,9 +144,65 @@ public class FriendsFragment extends Fragment {
         inflater.inflate(R.menu.menu_friends, menu);
     }
 
-    public boolean isFriendsLoading() {
+
+    private void fetchFriends() {
+        AccountManager.getInstance()
+                      .getAccount(AccountType.Vk)
+                      .getApi()
+                      .fetchFriends()
+                      .flatMap((Func1<Map<Integer, ? extends User>, Observable<Collection<? extends User>>>) integerMap -> Observable.just(integerMap.values()))
+                      .subscribeOn(Schedulers.computation())
+                      .observeOn(AndroidSchedulers.mainThread())
+                      .subscribe(users -> {
+                                     friendsAdapter.setData(users);
+                                     swipeRefreshFriendsLayout.setRefreshing(false);
+                                 },
+                                 throwable -> Toast.makeText(FriendsFragment.this.getActivity(),
+                                                             throwable.getMessage(),
+                                                             Toast.LENGTH_SHORT).show());
+    }
+
+    private Subscription subscribeOnFriendsUpdate() {
         return AccountManager.getInstance()
-                             .getAccount()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .getDataPublisher()
+                             .friendsObservable()
+                             .flatMap((Func1<Map<Integer, ? extends User>, Observable<Collection<? extends User>>>)
+                                              friends -> Observable.just(friends.values()))
+                             .subscribeOn(Schedulers.computation())
+                             .observeOn(AndroidSchedulers.mainThread())
+                             .subscribe(users -> {
+                                            Log.i(TAG, "onResume: friends arrived");
+                                            friendsAdapter.setData(users);
+                                            swipeRefreshFriendsLayout.setRefreshing(false);
+                                        },
+                                        throwable -> Toast.makeText(FriendsFragment.this.getActivity(),
+                                                                    throwable.getMessage(),
+                                                                    Toast.LENGTH_SHORT).show());
+    }
+
+    private Subscription subscribeOnFriendsErrors() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .getDataPublisher()
+                             .friendsErrorsObservable()
+                             .observeOn(AndroidSchedulers.mainThread())
+                             .subscribe(throwable -> {
+                                            Toast.makeText(FriendsFragment.this.getActivity(),
+                                                           throwable.getMessage(),
+                                                           Toast.LENGTH_SHORT).show();
+                                            swipeRefreshFriendsLayout.setRefreshing(false);
+                                        },
+                                        throwable -> Toast.makeText(FriendsFragment.this.getActivity(),
+                                                                    throwable.getMessage(),
+                                                                    Toast.LENGTH_SHORT).show());
+    }
+
+    private boolean isFriendsLoading() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
                              .getApi()
                              .isFriendsLoading();
     }

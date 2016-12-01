@@ -1,14 +1,18 @@
 package com.korn.im.allin1.vk;
 
+import android.util.Log;
+
 import com.korn.im.allin1.pojo.Message;
 import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 
+
 /**
  * Util class for creating request's
  */
 class VkRequestUtil {
+    private static final String TAG = "VkRequestUtil";
     // Event
     private static final String GET_DIALOGS = "messages.getDialogs";
     private static final String GET_USERS = "users.get";
@@ -27,7 +31,7 @@ class VkRequestUtil {
     private static final String DEFAULT_USER_PARAMS = "online, online_mobile, photo_50, photo_100, photo_200, photo_200_orig";
     //TODO Change addition fields of getting profiles
     private static final String DIALOGS_WITH_USERS_REQUEST_CODE =
-                    "var dialogs = API.messages.getDialogs({\"offset\" : 1, \"start_message_id\" : %s, \"count\" : %s}); " +
+                    "var dialogs = API.messages.getDialogs({\"offset\" : %s, \"start_message_id\" : %s, \"count\" : %s}); " +
                     "var profiles = API.users.get({\"user_ids\" : dialogs.items@.message@.user_id, \"fields\" : \"%s\"}); " +
                     "return {\"dialogs\" : dialogs} + {\"profiles\" : profiles};";
     private static final int CONNECT_TO_VK_LONG_PULL_ATTEMPTS = 3;
@@ -41,14 +45,17 @@ class VkRequestUtil {
 
     //----------------------------------------------------------------------------------------------
 
-    static VKRequest createDialogsRequest(int lastDialogStamp,
+    static VKRequest createDialogsRequest(int offset,
+                                          int lastDialogStamp,
                                           int count) {
+        String s  = String.format(DIALOGS_WITH_USERS_REQUEST_CODE,
+                                  offset,
+                                  lastDialogStamp,
+                                  count,
+                                  DEFAULT_USER_PARAMS);
+        Log.i(TAG, "createDialogsRequest: " + s);
         return new VKRequest(EXECUTE,
-                             VKParameters.from(CODE,
-                                               String.format(DIALOGS_WITH_USERS_REQUEST_CODE,
-                                                             lastDialogStamp,
-                                                             count,
-                                                             DEFAULT_USER_PARAMS)));
+                             VKParameters.from(CODE,s));
     }
 
     private static VKRequest createUsersRequest(String usersId) {

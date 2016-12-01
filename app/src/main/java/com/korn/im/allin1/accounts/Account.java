@@ -2,27 +2,15 @@ package com.korn.im.allin1.accounts;
 
 import android.app.Activity;
 
-import com.korn.im.allin1.pojo.Dialog;
-import com.korn.im.allin1.pojo.Dialogs;
-import com.korn.im.allin1.pojo.Interlocutor;
-import com.korn.im.allin1.pojo.Message;
-import com.korn.im.allin1.pojo.User;
+public abstract class Account {
 
-/**
- * Created by korn on 03.08.16.
- */
-public interface Account <
-        TMessage extends Message,
-        TUser extends User,
-        TDialogs extends Dialogs<TDialog, TMessage>,
-        TDialog extends Dialog,
-        TInterlocutor extends Interlocutor> {
+    public abstract boolean isLoggedIn();
 
-    boolean isLoggedIn();
+    public abstract void logIn(Activity activity);
 
-    void logIn(Activity activity);
+    public abstract void logOut();
 
-    void logOut();
+    public abstract Api getApi();
 
-    Api<TMessage, TUser, TDialogs, TDialog, TInterlocutor> getApi();
+    public abstract AccountType getAccountType();
 }

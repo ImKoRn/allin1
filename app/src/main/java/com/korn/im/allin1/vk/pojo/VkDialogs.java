@@ -36,15 +36,11 @@ public class VkDialogs implements Dialogs<VkDialog, VkMessage> {
         ImmutableMap.Builder<Integer, VkDialog> dialogsBuilder = ImmutableMap.builder();
         ImmutableTable.Builder<Integer, Integer, VkMessage> messagesBuilder = ImmutableTable.builder();
 
-        JSONObject jsonDialog;
-        VkDialog dialog;
-        VkMessage message;
-
-        for (int i = 0; i < dialogs.length(); i++) {
-            jsonDialog = dialogsArray.getJSONObject(i);
-            dialog = new VkDialog(jsonDialog);
+        for (int i = 0; i < dialogsArray.length(); i++) {
+            JSONObject jsonDialog = dialogsArray.getJSONObject(i);
+            VkDialog dialog = new VkDialog(jsonDialog);
             dialogsBuilder.put(dialog.getId(), dialog);
-            message = new VkMessage(jsonDialog.getJSONObject(VkDialog.MESSAGE_FIELD));
+            VkMessage message = new VkMessage(jsonDialog.getJSONObject(VkDialog.MESSAGE_FIELD));
             messagesBuilder.put(message.getDialogId(), message.getId(), message);
         }
 
