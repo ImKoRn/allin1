@@ -13,19 +13,25 @@ import android.widget.TextView;
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.accounts.AccountManager;
 import com.korn.im.allin1.accounts.AccountType;
+import com.korn.im.allin1.accounts.Api;
 import com.korn.im.allin1.adapters.MessagesAdapter;
 import com.korn.im.allin1.pojo.Interlocutor;
 import com.korn.im.allin1.pojo.Message;
 import com.korn.im.allin1.ui.customview.SocialCircularImageView;
 import com.nostra13.universalimageloader.core.ImageLoader;
 
-import java.util.Collections;
 import java.util.Map;
 
+import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 public class DialogActivity extends AppCompatActivity {
     public static final String CURRENT_DIALOG_ID = "curDialogId";
+
+    // Subscriptions
+    private Subscription messagesLoadSubscriptions;
 
     // Ui
     private SocialCircularImageView interlocutorIcon;
@@ -59,6 +65,22 @@ public class DialogActivity extends AppCompatActivity {
         listOfMessages = (RecyclerView) findViewById(R.id.messages_list);
         listOfMessages.setLayoutManager(llm = new LinearLayoutManager(this));
         listOfMessages.setAdapter(messagesAdapter = new MessagesAdapter(this, listOfMessages, llm));
+        messagesAdapter.setOnNeedMoreListener(() -> {
+            switch (loadMessages(Api.Request.LOAD)) {
+                case LOADING : {
+                    messagesAdapter.setNotifyAboutLoading(false);
+                    break;
+                }
+                case NOTHING_TO_LOAD : {
+                    messagesAdapter.setCanLoadData(false);
+                    break;
+                }
+                case BUSY : {
+                    messagesAdapter.setNotifyAboutLoading(false);
+                }
+            }
+        });
+        llm.setReverseLayout(true);
 
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
     }
@@ -73,13 +95,31 @@ public class DialogActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        messagesLoadSubscriptions = subscribeOnMessagesUpdate();
         fetchInterlocutor();
         fetchMessages();
+    }
+
+    private Subscription subscribeOnMessagesUpdate() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .getEventsManager()
+                             .messagesObservable()
+                             .subscribeOn(Schedulers.computation())
+                             .observeOn(AndroidSchedulers.mainThread())
+                             .subscribe(messages -> {
+                                 DialogActivity.this.messages = messages.second;
+                                 showMessages();
+                                 messagesAdapter.setCanLoadData(canLoadMessages());
+                                 messagesAdapter.setNotifyAboutLoading(true);
+                             });
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (messagesLoadSubscriptions != null) messagesLoadSubscriptions.unsubscribe();
     }
 
     @Override
@@ -116,20 +156,33 @@ public class DialogActivity extends AppCompatActivity {
                       .getAccount(AccountType.Vk)
                       .getApi()
                       .fetchMessages(interlocutorId)
-                      .subscribe((Action1<Map<Integer, ? extends Message>>) messages -> {
+                      .subscribe(messages -> {
                                      this.messages = messages;
                                      showMessages();
+                                     messagesAdapter.setCanLoadData(canLoadMessages());
+                                     messagesAdapter.setNotifyAboutLoading(true);
                                  },
-                                 throwable -> {
-                                     messages = Collections.emptyMap();
-                                     showMessages();
-                                 });
+                                 throwable -> loadMessages(Api.Request.LOAD_FIRST));
+    }
+
+    private boolean canLoadMessages() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .canLoadMessages(interlocutorId);
+    }
+
+    private Api.Response loadMessages(Api.Request request) {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .loadMessages(interlocutorId, request);
     }
 
     private void showMessages() {
         progressBar.setVisibility(View.GONE);
         listOfMessages.setVisibility(View.VISIBLE);
-        messagesAdapter.setData(messages.values());
+        messagesAdapter.setData(messages);
     }
 
     private void showInterlocutor() {

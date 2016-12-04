@@ -12,16 +12,16 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.korn.im.allin1.R;
+import com.korn.im.allin1.adapters.advancedadapter.AdvancedAdapter;
+import com.korn.im.allin1.adapters.advancedadapter.Holder;
 import com.korn.im.allin1.pojo.Message;
 
-import java.util.Collection;
+import java.util.Map;
 
-/**
- * Created by korn on 03.09.16.
- */
-public class MessagesAdapter extends AdvancedAdapter {
+public class MessagesAdapter extends AdvancedAdapter<MessagesAdapter.MessageHolder, Holder> {
     private static final int INCOMING = 1;
     private static final int OUTGOING = 2;
+
     private SortedList<Message> data;
 
     private Context context;
@@ -54,28 +54,36 @@ public class MessagesAdapter extends AdvancedAdapter {
     }
 
     @Override
-    public int getItemViewType(int position) {
-        int type = super.getItemViewType(position);
-
-        if (type != 0) return type;
-
-        return data.get(position).isOut()? OUTGOING : INCOMING;
+    protected int whatIsItemViewType(int position) {
+        return data.get(position).isOut() ? OUTGOING : INCOMING;
     }
 
     @Override
-    public Holder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Holder holder = super.onCreateViewHolder(parent, viewType);
-        if (holder != null) return holder;
+    protected MessageHolder createHolder(ViewGroup parent,
+                                         int viewType) {
+        int layoutId = viewType == OUTGOING ? R.layout.outcoming_message_item : R.layout.incoming_message_item;
+        return new MessageHolder(LayoutInflater.from(context)
+                                               .inflate(layoutId,
+                                                        parent,
+                                                        false),
+                                 this);
+    }
 
-        View view = LayoutInflater.from(context).inflate(viewType == INCOMING?
-                R.layout.incoming_message_item : R.layout.outcoming_message_item, parent, false);
-
-        return new MessageHolder(view);
+    @Override
+    protected void onBindHolder(MessageHolder holder,
+                                int position) {
+        holder.bind(data.get(position));
     }
 
     @Override
     public Holder createOnLoadingHolder(ViewGroup parent) {
-        return new Holder(LayoutInflater.from(context).inflate(R.layout.loader_layout, parent, false)) {
+        return new Holder(LayoutInflater.from(context).inflate(R.layout.loader_layout, parent, false),
+                          this) {
+            @Override
+            public int getId() {
+                return -1;
+            }
+
             @Override
             public void onClick(View v) {}
 
@@ -86,17 +94,10 @@ public class MessagesAdapter extends AdvancedAdapter {
         };
     }
 
-    @Override
-    public void onBindViewHolder(Holder holder, int position) {
-        if(position == getActualItemCount()) return;
-
-        ((MessageHolder) holder).bind(data.get(position));
-    }
-
-    public void setData(Collection<? extends Message> messages) {
+    public void setData(Map<Integer, ? extends Message> messages) {
         data.beginBatchedUpdates();
-        for (Message message : messages)
-            data.add(message);
+        for (Map.Entry<Integer, ? extends Message> message : messages.entrySet())
+            data.add(message.getValue());
         data.endBatchedUpdates();
     }
 
@@ -104,16 +105,22 @@ public class MessagesAdapter extends AdvancedAdapter {
         data.clear();
     }
 
-    public class MessageHolder extends Holder {
+    class MessageHolder extends Holder {
         private TextView messageText;
-        public MessageHolder(View itemView) {
-            super(itemView);
+        MessageHolder(View itemView,
+                      AdvancedAdapter<? extends Holder, ? extends Holder> advancedAdapter) {
+            super(itemView, advancedAdapter);
             messageText = (TextView) itemView.findViewById(R.id.messageText);
         }
 
-        public void bind(Message message) {
+        void bind(Message message) {
             messageText.setText(message.getContent());
             messageText.setTextColor(message.isRead() ? Color.BLACK : Color.RED);
+        }
+
+        @Override
+        public int getId() {
+            return 0;
         }
     }
 }

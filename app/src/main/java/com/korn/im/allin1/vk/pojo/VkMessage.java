@@ -1,5 +1,7 @@
 package com.korn.im.allin1.vk.pojo;
 
+import android.util.Log;
+
 import com.korn.im.allin1.pojo.Message;
 
 import org.json.JSONException;
@@ -11,7 +13,6 @@ import org.json.JSONObject;
 public class VkMessage implements Message {
     private static final String ID_FIELD = "id";
     private static final String USER_ID_FIELD = "user_id";
-    private static final String TITLE_FIELD = "title";
     private static final String BODY_FIELD = "body";
     private static final String DATE_FIELD = "date";
     private static final String READ_FIELD = "read_state";
@@ -24,7 +25,6 @@ public class VkMessage implements Message {
     private final int userId;
     private final int dialogId;
     private final long date;
-    private final String title;
     private final String content;
     private final boolean isOut;
     private final boolean isRead;
@@ -33,11 +33,12 @@ public class VkMessage implements Message {
     private final boolean deleted;
     private final int chatId;
 
-    VkMessage(JSONObject source) throws JSONException {
+    public VkMessage(JSONObject source) throws JSONException {
         // General fields
+        Log.w("Message",
+              "VkMessage: " + source.toString());
         id = source.getInt(ID_FIELD);
         userId = source.getInt(USER_ID_FIELD);
-        title = source.getString(TITLE_FIELD);
         content = source.getString(BODY_FIELD);
         date = source.getLong(DATE_FIELD);
         isRead = source.getInt(READ_FIELD) == 1;
@@ -63,11 +64,6 @@ public class VkMessage implements Message {
     @Override
     public String getContent() {
         return content;
-    }
-
-    @Override
-    public String getTitle() {
-        return title;
     }
 
     @Override

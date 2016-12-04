@@ -31,8 +31,10 @@ public interface Cache<
     Observable<TDialog> getDialog(final int id);
     void saveDialog(TDialog dialog);
 
-    Observable<Map<Integer, TMessage>> getMessages(final int id);
-    void saveMessages(final int id, final Map<Integer, ? extends TMessage> messages);
+    Observable<Pair<Integer, Map<Integer, TMessage>>> getMessages(final int id);
+    void saveMessages(final int id,
+                      final Map<Integer, ? extends TMessage> messages,
+                      boolean rewrite);
 
     Observable<TInterlocutor> getInterlocutor(final int id);
     Observable<Map<Integer, TInterlocutor>> getInterlocutors();

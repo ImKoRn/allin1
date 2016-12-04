@@ -11,20 +11,20 @@ import android.widget.TextView;
 
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.pojo.User;
-import com.korn.im.allin1.ui.customview.SocialCircularImageView;
+import com.korn.im.allin1.ui.customview.OnlineImageView;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.turingtechnologies.materialscrollbar.INameableAdapter;
+//import com.turingtechnologies.materialscrollbar.INameableAdapter;
 
-import java.util.Collection;
+import java.util.Map;
 
-public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendsHolder> implements INameableAdapter {
+public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendsHolder> {//implements INameableAdapter {
     public static final int DEFAULT_CAPACITY = 100;
 
     private final Context context;
 
     protected SortedList<User> data;
 
-    FriendsAdapter(Context context) {
+    public FriendsAdapter(Context context) {
         this.context = context;
     }
 
@@ -33,7 +33,10 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendsH
         data = new SortedList<>(User.class, new SortedList.BatchedCallback<>(new SortedListAdapterCallback<User>(this) {
             @Override
             public int compare(User o1, User o2) {
-                return User.NAME_CASE_NOT_INSENSITIVE.compare(o1, o2);
+                int c = User.NAME_CASE_NOT_INSENSITIVE.compare(o1, o2);
+                if (c == 0) c = User.SURNAME_CASE_NOT_INSENSITIVE.compare(o1, o2);
+                if (c == 0) c = o1.getId() - o2.getId();
+                return c;
             }
 
             @Override
@@ -64,19 +67,23 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendsH
         return data == null? 0 : data.size();
     }
 
-    public void setData(Collection<? extends User> newUsersList) {
+    public void setData(Map<Integer, ? extends User> newUsersList) {
         data.beginBatchedUpdates();
-        for (User user : newUsersList)
-            data.add(user);
+        for (int i = 0; i < data.size(); i++)
+            if (newUsersList.containsKey(data.get(i).getId()))
+                data.recalculatePositionOfItemAt(i);
+            else data.removeItemAt(i--);
+        for (Map.Entry<Integer, ? extends User> entry : newUsersList.entrySet())
+            data.add(entry.getValue());
         data.endBatchedUpdates();
     }
 
-    @Override
+    /*@Override
     public Character getCharacterForElement(int element) {
-        if(data.size() > element && element >= 0) {
+        if(data.getDialogsCount() > element && element >= 0) {
             return data.get(element).getName().charAt(0);
         } else return  ' ';
-    }
+    }*/
 
     public void clear() {
         data.clear();
@@ -84,17 +91,17 @@ public class FriendsAdapter extends RecyclerView.Adapter<FriendsAdapter.FriendsH
 
     //Classes and Interfaces
     class FriendsHolder extends RecyclerView.ViewHolder {
-        private SocialCircularImageView userIcon;
+        private OnlineImageView userIcon;
         private TextView userName;
 
         FriendsHolder(View itemView) {
             super(itemView);
-            userIcon = (SocialCircularImageView) itemView.findViewById(R.id.userIcon);
+            userIcon = (OnlineImageView) itemView.findViewById(R.id.userIcon);
             userName = (TextView) itemView.findViewById(R.id.userName);
         }
 
         void bind(User user) {
-            ImageLoader.getInstance().displayImage(user.getMediumImage(), userIcon);
+            ImageLoader.getInstance().displayImage(user.getMediumImage(), userIcon.getImageView());
             userIcon.setShowOnlineMark(user.isOnline(), user.isOnlineMobile());
             userName.setText(user.getFullName());
         }

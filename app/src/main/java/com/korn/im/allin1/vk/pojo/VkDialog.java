@@ -27,6 +27,7 @@ public class VkDialog implements Dialog, Interlocutor {
     private final int id;
     private volatile int unreadCount;
     private volatile int lastMessageId;
+    private volatile int firstMessageId;
 
     // Chat fields
     private final String fullName;
@@ -35,17 +36,22 @@ public class VkDialog implements Dialog, Interlocutor {
     private final String photo200;
     private final boolean isChat;
 
-    VkDialog(JSONObject dialogJson) throws JSONException {
+    public VkDialog(JSONObject dialogJson) throws JSONException {
         JSONObject messageJson = dialogJson.getJSONObject(MESSAGE_FIELD);
         int chat_id = messageJson.optInt(MESSAGE_CHAT_ID_FIELD, -1);
         id = chat_id != -1 ? chat_id + 2000000000 : messageJson.getInt(MESSAGE_USER_ID_FIELD);
         unreadCount = dialogJson.optInt(UNREAD_FIELD, 0);
         lastMessageId = messageJson.optInt(MESSAGE_ID_FIELD);
+        firstMessageId = lastMessageId;
         isChat = (messageJson.optInt(MESSAGE_CHAT_ID_FIELD, -1) != -1);
         fullName = messageJson.getString(TITLE_FIELD);
         photo50 = messageJson.optString(PHOTO50_FIELD, DEFAULT_PHOTO);
         photo100 = messageJson.optString(PHOTO100_FIELD, DEFAULT_PHOTO);
         photo200 = messageJson.optString(PHOTO200_FIELD, DEFAULT_PHOTO);
+    }
+
+    int getFirstMessageId() {
+        return firstMessageId;
     }
 
     @Override

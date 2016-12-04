@@ -2,7 +2,7 @@ package com.korn.im.allin1.vk;
 
 import android.util.Pair;
 
-import com.korn.im.allin1.accounts.DbManager;
+import com.korn.im.allin1.accounts.DbCache;
 import com.korn.im.allin1.errors.NoDataException;
 import com.korn.im.allin1.pojo.Interlocutor;
 import com.korn.im.allin1.vk.pojo.VkDialog;
@@ -14,8 +14,8 @@ import java.util.Map;
 
 import rx.Observable;
 
-//TODO create DB table addition
-class VkDbManager implements DbManager<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
+//TODO create DB interactions
+class VkDbCache implements DbCache<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
     @Override
     public Observable<Map<Integer, VkUser>> getFriends() {
         return Observable.create(subscriber -> {
@@ -24,17 +24,17 @@ class VkDbManager implements DbManager<VkMessage, VkUser, VkDialogs, VkDialog, I
     }
 
     @Override
-    public void saveFriends(Map<Integer, VkUser> vkUsers) {
+    public void saveFriends(final Map<Integer, VkUser> vkUsers) {
 
     }
 
     @Override
-    public Observable<VkUser> getFriend(int id) {
+    public Observable<VkUser> getFriend(final int id) {
         return Observable.error(new Throwable("No data"));
     }
 
     @Override
-    public void saveFriend(VkUser user) {
+    public void saveFriend(final VkUser user) {
 
     }
 
@@ -49,12 +49,12 @@ class VkDbManager implements DbManager<VkMessage, VkUser, VkDialogs, VkDialog, I
     }
 
     @Override
-    public Observable<VkDialog> getDialog(int id) {
+    public Observable<VkDialog> getDialog(final int id) {
         return Observable.error(new Throwable("No data"));
     }
 
     @Override
-    public void saveDialog(VkDialog dialog) {
+    public void saveDialog(final VkDialog dialog) {
 
     }
 
@@ -69,7 +69,7 @@ class VkDbManager implements DbManager<VkMessage, VkUser, VkDialogs, VkDialog, I
     }
 
     @Override
-    public Observable<Interlocutor> getInterlocutor(int id) {
+    public Observable<Interlocutor> getInterlocutor(final int id) {
         return Observable.error(new Throwable("No data"));
     }
 
@@ -79,12 +79,14 @@ class VkDbManager implements DbManager<VkMessage, VkUser, VkDialogs, VkDialog, I
     }
 
     @Override
-    public Observable<Map<Integer, VkMessage>> getMessages(final int id) {
+    public Observable<Pair<Integer, Map<Integer, VkMessage>>> getMessages(final int id) {
         return Observable.error(new NoDataException());
     }
 
     @Override
-    public void saveMessages(final int id, final Map<Integer, ? extends VkMessage> messages) {
+    public void saveMessages(final int id,
+                             final Map<Integer, ? extends VkMessage> messages,
+                             boolean rewrite) {
 
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="SocialCircularImageView">
+    <declare-styleable name="SocialImageView">
         <attr name="social_enableOnlineMark" format="boolean"/>
         <attr name="social_onlineMarkBorderRadius" format="dimension"/>
         <attr name="social_onlineMarkCircleRadius" format="dimension"/>

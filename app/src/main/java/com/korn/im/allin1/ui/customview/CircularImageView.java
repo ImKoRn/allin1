@@ -28,7 +28,6 @@ public class CircularImageView extends ImageView {
     private static final float DEFAULT_SHADOW_RADIUS = 8.0f;
 
     // Properties
-    protected float borderWidth = 0;
     protected int canvasSize;
     private float shadowRadius;
     private int shadowColor = Color.BLACK;
@@ -64,13 +63,6 @@ public class CircularImageView extends ImageView {
         // Load the styled attributes and set their properties
         TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.CircularImageView, defStyleAttr, 0);
 
-        /*// Init Border
-        if (attributes.getBoolean(R.styleable.CircularImageView_civ_border, true)) {
-            float defaultBorderSize = DEFAULT_BORDER_WIDTH * getContext().getResources().getDisplayMetrics().density;
-            setBorderWidth(attributes.getDimension(R.styleable.CircularImageView_civ_border_width, defaultBorderSize));
-            setBorderColor(attributes.getColor(R.styleable.CircularImageView_civ_border_color, Color.WHITE));
-        }*/
-
         // Init Shadow
         if (attributes.getBoolean(R.styleable.CircularImageView_civ_shadow, false)) {
             shadowRadius = DEFAULT_SHADOW_RADIUS;
@@ -79,20 +71,6 @@ public class CircularImageView extends ImageView {
 
         attributes.recycle();
     }
-    //endregion
-
-    /*//region Set Attr Method
-    public void setBorderWidth(float borderWidth) {
-        this.borderWidth = borderWidth;
-        requestLayout();
-        invalidate();
-    }
-
-    public void setBorderColor(int borderColor) {
-        if (paintBorder != null)
-            paintBorder.setColor(borderColor);
-        invalidate();
-    }*/
 
     public void addShadow() {
         if (shadowRadius == 0)
@@ -144,11 +122,11 @@ public class CircularImageView extends ImageView {
         // circleCenter is the x or y of the view's center
         // radius is the radius in pixels of the cirle to be drawn
         // paint contains the shader that will texture the shape
-        float circleCenter = (int) (canvasSize - (borderWidth * 2)) / 2;
+        float circleCenter = canvasSize / 2;
         // Draw Border
         //canvas.drawCircle(circleCenter + borderWidth, circleCenter + borderWidth, circleCenter + borderWidth - (shadowRadius + shadowRadius / 2), paintBorder);
         // Draw CircularImageView
-        canvas.drawCircle(circleCenter + borderWidth, circleCenter + borderWidth, circleCenter - (shadowRadius + shadowRadius / 2), paint);
+        canvas.drawCircle(circleCenter, circleCenter, circleCenter - (shadowRadius + shadowRadius / 2), paint);
     }
 
     private void loadBitmap() {
@@ -202,17 +180,15 @@ public class CircularImageView extends ImageView {
     private Bitmap cropBitmap(Bitmap bitmap) {
         Bitmap bmp;
         if (bitmap.getWidth() >= bitmap.getHeight()) {
-            bmp = Bitmap.createBitmap(
-                    bitmap,
-                    bitmap.getWidth() / 2 - bitmap.getHeight() / 2,
-                    0,
-                    bitmap.getHeight(), bitmap.getHeight());
+            bmp = Bitmap.createBitmap(bitmap,
+                                      bitmap.getWidth() / 2 - bitmap.getHeight() / 2,
+                                      0,
+                                      bitmap.getHeight(), bitmap.getHeight());
         } else {
-            bmp = Bitmap.createBitmap(
-                    bitmap,
-                    0,
-                    bitmap.getHeight() / 2 - bitmap.getWidth() / 2,
-                    bitmap.getWidth(), bitmap.getWidth());
+            bmp = Bitmap.createBitmap(bitmap,
+                                      0,
+                                      bitmap.getHeight() / 2 - bitmap.getWidth() / 2,
+                                      bitmap.getWidth(), bitmap.getWidth());
         }
         return bmp;
     }
@@ -261,10 +237,10 @@ public class CircularImageView extends ImageView {
         int specSize = MeasureSpec.getSize(measureSpec);
 
         if (specMode == MeasureSpec.EXACTLY) {
-            // The parent has determined an exact size for the child.
+            // The parent has determined an exact getDialogsCount for the child.
             result = specSize;
         } else if (specMode == MeasureSpec.AT_MOST) {
-            // The child can be as large as it wants up to the specified size.
+            // The child can be as large as it wants up to the specified getDialogsCount.
             result = specSize;
         } else {
             // The parent has not imposed any constraint on the child.
@@ -283,7 +259,7 @@ public class CircularImageView extends ImageView {
             // We were told how big to be
             result = specSize;
         } else if (specMode == MeasureSpec.AT_MOST) {
-            // The child can be as large as it wants up to the specified size.
+            // The child can be as large as it wants up to the specified getDialogsCount.
             result = specSize;
         } else {
             // Measure the text (beware: ascent is a negative number)

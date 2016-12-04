@@ -12,7 +12,7 @@ import java.util.Map;
 
 import rx.Observable;
 
-public interface DbManager<
+public interface DbCache<
         TMessage extends Message,
         TUser extends User,
         TDialogs extends Dialogs,
@@ -34,6 +34,8 @@ public interface DbManager<
      Observable<TInterlocutor> getInterlocutor(int id);
      void saveInterlocutor(TInterlocutor interlocutor);
 
-     Observable<Map<Integer, TMessage>> getMessages(final int id);
-     void saveMessages(final int id, final Map<Integer, ? extends TMessage> messages);
+     Observable<Pair<Integer, Map<Integer, TMessage>>> getMessages(final int id);
+     void saveMessages(final int id,
+                       final Map<Integer, ? extends TMessage> messages,
+                       boolean rewrite);
 }

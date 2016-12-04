@@ -27,7 +27,7 @@ public class VkDialogs implements Dialogs<VkDialog, VkMessage> {
         this.messages = ImmutableTable.copyOf(dialogs.getMessages());
     }
 
-    VkDialogs(final JSONObject from) throws JSONException {
+    public VkDialogs(final JSONObject from) throws JSONException {
         JSONObject dialogs = from.optJSONObject(DIALOGS_FIELD);
         this.unreadDialogsCount = dialogs.optInt(UNREAD_DIALOGS_FIELD);
 
@@ -54,7 +54,7 @@ public class VkDialogs implements Dialogs<VkDialog, VkMessage> {
     }
 
     @Override
-    public int size() {
+    public int getDialogsCount() {
         return dialogs.size();
     }
 

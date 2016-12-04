@@ -22,7 +22,7 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog, VkMessage> {
     private volatile int unreadDialogCount = 0;
 
     @Override
-    public int size() {
+    public int getDialogsCount() {
         return dialogs.size();
     }
 
@@ -76,9 +76,7 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog, VkMessage> {
     }
 
     public void addDialog(VkDialog newDialog) {
-        synchronized (dialogs) {
-            dialogs.put(newDialog.getId(), newDialog);
-        }
+        dialogs.put(newDialog.getId(), newDialog);
     }
 
     public VkDialogs getCopy() {
@@ -86,16 +84,6 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog, VkMessage> {
             synchronized (messages) {
                 return new VkDialogs(this);
             }
-        }
-    }
-
-    public int nextDialogsStamp() {
-        synchronized (dialogs) {
-            int stamp = 0;
-            for (Map.Entry<Integer, VkDialog> entry : dialogs.entrySet())
-                if (stamp > entry.getValue().getLastMessageId() || stamp == 0)
-                    stamp = entry.getValue().getLastMessageId();
-            return stamp;
         }
     }
 
@@ -108,9 +96,35 @@ public class SynchronizedVkDialogs implements Dialogs<VkDialog, VkMessage> {
     }
 
     public void addMessagesToDialog(int id,
-                                    Map<Integer, ? extends VkMessage> messages) {
-        synchronized (this.messages) {
-            this.messages.row(id).putAll(messages);
+                                    Map<Integer, ? extends VkMessage> messages,
+                                    boolean rewrite) {
+        synchronized (dialogs) {
+            synchronized (this.messages) {
+                if (rewrite) this.messages.row(id).clear();
+                this.messages.row(id).putAll(messages);
+            }
         }
+    }
+
+    // Data stamps
+
+    public int nextDialogsStamp() {
+        synchronized (dialogs) {
+            int stamp = 0;
+            for (Map.Entry<Integer, VkDialog> entry : dialogs.entrySet())
+                if (stamp > entry.getValue().getLastMessageId() || stamp == 0)
+                    stamp = entry.getValue().getLastMessageId();
+            return stamp;
+        }
+    }
+
+    public int nextMessagesStamp(int id) {
+        VkDialog dialog = dialogs.get(id);
+        if (dialog == null) return 0;
+        return dialog.getFirstMessageId();
+    }
+
+    public int getMessagesCount(int id) {
+        return messages.row(id).size();
     }
 }

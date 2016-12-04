@@ -1,7 +1,5 @@
 package com.korn.im.allin1.vk;
 
-import android.util.Log;
-
 import com.korn.im.allin1.pojo.Message;
 import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKParameters;
@@ -24,10 +22,6 @@ class VkRequestUtil {
     private static final String MESSAGES_GET_HISTORY = "messages.getHistory";
     private static final String VK_LONG_PULL_HISTORY = "messages.getLongPollHistory";
 
-    // Const
-    public static final int DEFAULT_MESSAGES_COUNT = 30;
-    public static final int DEFAULT_FRIENDS_COUNT = 0;
-    static final int DEFAULT_DIALOGS_COUNT = 20;
     private static final String DEFAULT_USER_PARAMS = "online, online_mobile, photo_50, photo_100, photo_200, photo_200_orig";
     //TODO Change addition fields of getting profiles
     private static final String DIALOGS_WITH_USERS_REQUEST_CODE =
@@ -46,14 +40,13 @@ class VkRequestUtil {
     //----------------------------------------------------------------------------------------------
 
     static VKRequest createDialogsRequest(int offset,
-                                          int lastDialogStamp,
-                                          int count) {
+                                          int count,
+                                          int lastDialogStamp) {
         String s  = String.format(DIALOGS_WITH_USERS_REQUEST_CODE,
                                   offset,
                                   lastDialogStamp,
                                   count,
                                   DEFAULT_USER_PARAMS);
-        Log.i(TAG, "createDialogsRequest: " + s);
         return new VKRequest(EXECUTE,
                              VKParameters.from(CODE,s));
     }
@@ -162,12 +155,13 @@ class VkRequestUtil {
         return stringBuilder.toString();
     }
 
-    public static VKRequest createMessagesRequest(int interlocutorId, int fromMessage, int count) {
+    public static VKRequest createMessagesRequest(int interlocutorId, int lastMessageStamp, int count, int offset) {
         return new VKRequest(MESSAGES_GET_HISTORY,
                 VKParameters.from(
                         "peer_id", interlocutorId,
+                        "start_message_id", lastMessageStamp,
                         "count", count,
-                        "start_message_id", fromMessage
+                        "offset", offset
                 )
         );
     }

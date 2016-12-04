@@ -18,26 +18,22 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.accounts.AccountManager;
 import com.korn.im.allin1.accounts.AccountType;
+import com.korn.im.allin1.accounts.Api;
 import com.korn.im.allin1.adapters.DialogsAdapter;
 import com.korn.im.allin1.common.MarginDecoration;
 import com.korn.im.allin1.pojo.Dialogs;
 import com.korn.im.allin1.pojo.Interlocutor;
-import com.korn.im.allin1.pojo.User;
 import com.korn.im.allin1.ui.activities.DialogActivity;
 
-import java.util.Collection;
 import java.util.Map;
 
-import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 /**
@@ -64,6 +60,7 @@ public class DialogsFragment extends Fragment {
 
     }
 
+    // Lifecycle
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -78,12 +75,10 @@ public class DialogsFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_dialogs, container, false);
         swipeRefreshDialogsLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_dialogs);
         swipeRefreshDialogsLayout.setOnRefreshListener(() -> {
-            swipeRefreshDialogsLayout.setRefreshing(true);
-            managerLastState = llm.onSaveInstanceState();
-            AccountManager.getInstance()
-                          .getAccount(AccountType.Vk)
-                          .getApi()
-                          .loadDialogs();
+            if (load(Api.Request.RELOAD) == Api.Response.LOADING &&
+                load(Api.Request.LOAD_FIRST) == Api.Response.LOADING) {
+                swipeRefreshDialogsLayout.setRefreshing(true);
+            }
         });
         swipeRefreshDialogsLayout.setColorSchemeColors(Color.MAGENTA);
 
@@ -101,13 +96,22 @@ public class DialogsFragment extends Fragment {
 
         dialogsList.setLayoutManager(llm);
         dialogsList.addItemDecoration(new MarginDecoration(getContext(), R.dimen.dialogsMargin, true));
-/*
-        dialogsAdapter.setOnNeedMoreListener(new AdvancedAdapter.OnNeedMoreListener() {
-            @Override
-            public void onNeedMore() {
-                AccountManager.getInstance().getVkAccount().getApi().nextDialogs();
+        dialogsAdapter.setOnNeedMoreListener(() -> {
+            switch (load(Api.Request.LOAD)) {
+                case LOADING : {
+                    break;
+                }
+                case NOTHING_TO_LOAD : {
+                    dialogsAdapter.setCanLoadData(false);
+                    break;
+                }
+                case BUSY : {
+                    dialogsAdapter.setNotifyAboutLoading(false);
+                    break;
+                }
+                default:
             }
-        });*/
+        });
 
         dialogsAdapter.setItemLongClickListener((v, id) -> {
             PopupMenu popupMenu = new PopupMenu(getActivity(), v, Gravity.END);
@@ -120,12 +124,6 @@ public class DialogsFragment extends Fragment {
         return rootView;
     }
 
-    private void startDialogActivity(int id) {
-        Intent intent = new Intent(getActivity(), DialogActivity.class);
-        intent.putExtra(DialogActivity.CURRENT_DIALOG_ID, id);
-        startActivity(intent);
-    }
-
     @Override
     public void onResume() {
         super.onResume();
@@ -133,6 +131,15 @@ public class DialogsFragment extends Fragment {
         dialogsErrorSubscription = subscribeOnDialogsError();
         friendsUpdateSubscription = subscribeOnFriendsUpdate();
         fetchDialogs();
+        Api.State state = getDialogsLoadingState();
+        swipeRefreshDialogsLayout.setRefreshing(state == Api.State.RELOADING || state == Api.State.FIRST_LOADING);
+    }
+
+    private Api.State getDialogsLoadingState() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .getDialogsLoadingState();
     }
 
     @Override
@@ -142,7 +149,6 @@ public class DialogsFragment extends Fragment {
         if (dialogsErrorSubscription != null) dialogsErrorSubscription.unsubscribe();
         if (friendsUpdateSubscription != null) friendsUpdateSubscription.unsubscribe();
         managerLastState = llm.onSaveInstanceState();
-        dialogsAdapter.clear();
     }
 
     @Override
@@ -156,6 +162,21 @@ public class DialogsFragment extends Fragment {
         inflater.inflate(R.menu.menu_dialogs, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
+    //------------------------------------ Lifecycle end ------------------------------------------
+
+    // Methods
+    private void startDialogActivity(int id) {
+        Intent intent = new Intent(getActivity(), DialogActivity.class);
+        intent.putExtra(DialogActivity.CURRENT_DIALOG_ID, id);
+        startActivity(intent);
+    }
+
+    private Api.Response load(Api.Request request) {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .loadDialogs(request);
+    }
 
     private void fetchDialogs() {
         AccountManager.getInstance()
@@ -168,57 +189,61 @@ public class DialogsFragment extends Fragment {
                                      dialogsAdapter.setData(pair.first, pair.second);
                                      llm.onRestoreInstanceState(managerLastState);
                                      managerLastState = null;
+                                     dialogsAdapter.setCanLoadData(canLoadDialogs());
                                  },
-                                 throwable -> Toast.makeText(DialogsFragment.this.getActivity(),
-                                                             throwable.getMessage(),
-                                                             Toast.LENGTH_SHORT).show());
+                                 throwable -> {
+                                     if (load(Api.Request.LOAD_FIRST) == Api.Response.LOADING)
+                                        swipeRefreshDialogsLayout.setRefreshing(true);
+                                 });
 }
 
+    private boolean canLoadDialogs() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .canLoadDialogs();
+    }
+
+    // Subscriptions
     private Subscription subscribeOnDialogsUpdate() {
         return AccountManager.getInstance()
                              .getAccount(AccountType.Vk)
                              .getApi()
-                             .getDataPublisher()
+                             .getEventsManager()
                              .dialogsObservable()
                              .subscribeOn(Schedulers.computation())
                              .observeOn(AndroidSchedulers.mainThread())
                              .subscribe(pair -> {
+                                            Parcelable managerLastState = llm.onSaveInstanceState();
                                             dialogsAdapter.setData(pair.first, pair.second);
                                             swipeRefreshDialogsLayout.setRefreshing(false);
                                             llm.onRestoreInstanceState(managerLastState);
+                                            dialogsAdapter.setCanLoadData(canLoadDialogs());
                                         },
-                                        throwable -> Toast.makeText(DialogsFragment.this.getActivity(),
-                                                                    throwable.getMessage(),
-                                                                    Toast.LENGTH_SHORT).show());
-    }
-
-    private Subscription subscribeOnFriendsUpdate() {
-        return AccountManager.getInstance()
-                             .getAccount(AccountType.Vk)
-                             .getApi()
-                             .getDataPublisher()
-                             .friendsObservable()
-                             .flatMap((Func1<Map<Integer, ? extends User>, Observable<Collection<? extends User>>>)
-                                              friends -> Observable.just(friends.values()))
-                             .subscribeOn(Schedulers.computation())
-                             .observeOn(AndroidSchedulers.mainThread())
-                             .subscribe(users -> {
-                                            fetchDialogs();
-                                        },
-                                        throwable -> Toast.makeText(DialogsFragment.this.getActivity(),
-                                                                    throwable.getMessage(),
-                                                                    Toast.LENGTH_SHORT).show());
+                                        throwable -> {});
     }
 
     private Subscription subscribeOnDialogsError() {
         return AccountManager.getInstance()
                              .getAccount(AccountType.Vk)
                              .getApi()
-                             .getDataPublisher()
+                             .getEventsManager()
                              .dialogsErrorsObservable()
                              .subscribe(throwable -> {
                                             swipeRefreshDialogsLayout.setRefreshing(false);
                                         },
+                                        throwable -> {});
+    }
+
+    private Subscription subscribeOnFriendsUpdate() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .getEventsManager()
+                             .friendsObservable()
+                             .subscribeOn(Schedulers.computation())
+                             .observeOn(AndroidSchedulers.mainThread())
+                             .subscribe(users -> fetchDialogs(),
                                         throwable -> {});
     }
 }

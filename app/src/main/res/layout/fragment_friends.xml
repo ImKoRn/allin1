@@ -15,10 +15,10 @@
             android:scrollbars="vertical"
             android:scrollbarAlwaysDrawVerticalTrack="true"
             android:layout_toLeftOf="@+id/fast_scroller"
-            android:layout_toStartOf="@+id/fast_scroller" />
+            android:layout_toStartOf="@+id/fast_scroller"/>
     </android.support.v4.widget.SwipeRefreshLayout>
 
-    <com.turingtechnologies.materialscrollbar.DragScrollBar
+    <!--<com.turingtechnologies.materialscrollbar.DragScrollBar
         android:id="@+id/fast_scroller"
         android:layout_width="wrap_content"
         app:msb_recyclerView="@id/friends_list"
@@ -26,5 +26,5 @@
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true" />-->
 </RelativeLayout>

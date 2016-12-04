@@ -7,7 +7,7 @@ import java.util.Map;
  * Dialogs representation
  */
 public interface Dialogs<TDialog extends Dialog, TMessage extends Message> {
-    int size();
+    int getDialogsCount();
     int getUnreadDialogsCount();
 
     Map<Integer, TDialog> getDialogs();

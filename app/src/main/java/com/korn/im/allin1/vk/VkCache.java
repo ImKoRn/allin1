@@ -23,18 +23,20 @@ import rx.Subscriber;
 
 @SuppressLint("UseSparseArrays")
 class VkCache implements Cache<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
-
+    // Friends
     private volatile boolean hasFriends = false;
     private final Map<Integer, VkUser> friends = Collections.synchronizedMap(new HashMap<>());
 
+    // Dialogs and messages
     private volatile boolean hasDialogs = false;
     private final SynchronizedVkDialogs dialogs = new SynchronizedVkDialogs();
 
+    // Interlocutors
     private volatile boolean hasInterlocutors = false;
     private final Map<Integer, Interlocutor> interlocutors = Collections.synchronizedMap(new HashMap<>());
+    //----------------------------------------- Members end ---------------------------------------
 
-    VkCache() {}
-
+    // Friends methods
     @Override
     public Observable<Map<Integer, VkUser>> getFriends() {
         return Observable.create(new Observable.OnSubscribe<Map<Integer, VkUser>>() {
@@ -86,6 +88,7 @@ class VkCache implements Cache<VkMessage, VkUser, VkDialogs, VkDialog, Interlocu
         hasFriends = true;
     }
 
+    // Dialogs methods
     @Override
     public Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>> getDialogs() {
         return Observable.create(subscriber -> {
@@ -137,19 +140,23 @@ class VkCache implements Cache<VkMessage, VkUser, VkDialogs, VkDialog, Interlocu
         hasDialogs = true;
     }
 
+    // Messages methods
     @Override
-    public Observable<Map<Integer, VkMessage>> getMessages(final int id) {
+    public Observable<Pair<Integer, Map<Integer, VkMessage>>> getMessages(final int id) {
         return Observable.create(subscriber -> {
-            subscriber.onNext(dialogs.getDialogMessages(id));
+            subscriber.onNext(Pair.create(id, dialogs.getDialogMessages(id)));
             subscriber.onCompleted();
         });
     }
 
     @Override
-    public void saveMessages(final int id, final Map<Integer, ? extends VkMessage> messages) {
-        dialogs.addMessagesToDialog(id, messages);
+    public void saveMessages(final int id,
+                             final Map<Integer, ? extends VkMessage> messages,
+                             boolean rewrite) {
+        dialogs.addMessagesToDialog(id, messages, rewrite);
     }
 
+    // Interlocutors methods
     @Override
     public Observable<Interlocutor> getInterlocutor(final int id) {
         return Observable.create(subscriber -> {
@@ -208,7 +215,20 @@ class VkCache implements Cache<VkMessage, VkUser, VkDialogs, VkDialog, Interlocu
         hasInterlocutors = true;
     }
 
-    int getNextDialogsStamp() {
+    // Data stamps
+    int getDialogsStamp() {
         return dialogs.nextDialogsStamp();
+    }
+
+    int getMessagesStamp(int id) {
+        return dialogs.nextMessagesStamp(id);
+    }
+
+    public int getDialogsCount() {
+        return dialogs.getDialogsCount();
+    }
+
+    public int getMessagesCount(int id) {
+        return dialogs.getMessagesCount(id);
     }
 }

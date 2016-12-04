@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import com.google.common.collect.Table;
 import com.korn.im.allin1.R;
+import com.korn.im.allin1.adapters.advancedadapter.AdvancedAdapter;
+import com.korn.im.allin1.adapters.advancedadapter.Holder;
 import com.korn.im.allin1.pojo.Dialog;
 import com.korn.im.allin1.pojo.Dialogs;
 import com.korn.im.allin1.pojo.Interlocutor;
@@ -25,10 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
-/**
- * Created by korn on 05.08.16.
- */
-public class DialogsAdapter extends AdvancedAdapter {
+public class DialogsAdapter extends AdvancedAdapter<DialogsAdapter.DialogHolder, Holder> {
     private static final int MINUTE = 60;
     private static final int HOUR = MINUTE * 60;
     private static final int DAY = HOUR * 24;
@@ -67,28 +66,28 @@ public class DialogsAdapter extends AdvancedAdapter {
     }
 
     @Override
-    public Holder onCreateViewHolder(ViewGroup parent, int viewType) {
-        Holder holder = super.onCreateViewHolder(parent, viewType);
-        if (holder != null) return holder;
-
-        View view = LayoutInflater.from(context).inflate(R.layout.vk_dialog_item, parent, false);
-        return new DialogHolder(view);
+    protected void onBindHolder(DialogHolder holder,
+                                int position) {
+        Dialog dialog = data.get(position);
+        holder.bind(dialog,
+                    interlocutors.get(dialog.getId()),
+                    messages.get(dialog.getId(), dialog.getLastMessageId()));
     }
 
     @Override
-    public void onBindViewHolder(Holder holder, int position) {
-        if(position == getActualItemCount()) return;
-        Dialog dialog = data.get(position);
-        if (interlocutors.get(dialog.getId()) == null)
-            dialog.getId();
-        Interlocutor interlocutor = interlocutors.get(dialog.getId());
-        Message message = messages.get(dialog.getId(), dialog.getLastMessageId());
-        ((DialogHolder) holder).bind(dialog, interlocutor, message);
+    public int getActualItemCount() {
+        return data == null ? 0 : data.size();
     }
 
     @Override
     public Holder createOnLoadingHolder(ViewGroup parent) {
-        return new Holder(LayoutInflater.from(context).inflate(R.layout.loader_layout, parent, false)) {
+        return new Holder(LayoutInflater.from(context).inflate(R.layout.loader_layout, parent, false),
+                          this) {
+            @Override
+            public int getId() {
+                return -1;
+            }
+
             @Override
             public void onClick(View v) {}
 
@@ -100,8 +99,9 @@ public class DialogsAdapter extends AdvancedAdapter {
     }
 
     @Override
-    public int getActualItemCount() {
-        return data == null ? 0 : data.size();
+    protected DialogHolder createHolder(ViewGroup parent,
+                                        int viewType) {
+        return new DialogHolder(LayoutInflater.from(context).inflate(R.layout.vk_dialog_item, parent, false), this);
     }
 
     public void setData(Dialogs<Dialog, Message> dialogs, Map<Integer, ? extends Interlocutor> interlocutors) {
@@ -109,60 +109,19 @@ public class DialogsAdapter extends AdvancedAdapter {
         this.messages = dialogs.getMessages();
         data.beginBatchedUpdates();
         for (int i = 0; i < data.size(); i++) {
-            Dialog dialog = data.get(i);
-            if (dialogs.getDialogs().containsKey(dialog.getId())) {
+            if (dialogs.getDialogs().containsKey(data.get(i).getId())) {
                 data.recalculatePositionOfItemAt(i);
             } else data.removeItemAt(i--);
         }
-        data.addAll(dialogs.getDialogs().values());
-        data.endBatchedUpdates();
+        for (Map.Entry<Integer, Dialog> entry : dialogs.getDialogs()
+                                                       .entrySet())
+            data.add(entry.getValue());
         currentTime = System.currentTimeMillis() / 1000L;
+        data.endBatchedUpdates();
     }
 
     public void clear() {
         data.clear();
-    }
-
-    private class DialogHolder extends Holder {
-        private SocialCircularImageView userIconImageView;
-        private TextView userNameTextView;
-        private TextView lastMessageTextView;
-        private TextView dateTimeTextView;
-        private TextView unreadCountTextView;
-
-        private DialogHolder(View itemView) {
-            super(itemView, R.id.root);
-            userIconImageView = (SocialCircularImageView) itemView.findViewById(R.id.userIcon);
-            userNameTextView = (TextView) itemView.findViewById(R.id.userName);
-            lastMessageTextView = (TextView) itemView.findViewById(R.id.lastMessage);
-            dateTimeTextView = (TextView) itemView.findViewById(R.id.dateTime);
-            unreadCountTextView = (TextView) itemView.findViewById(R.id.unreadCount);
-        }
-
-        private void bind(Dialog dialog, Interlocutor interlocutor, Message lastMessage) {
-            ImageLoader.getInstance().displayImage(interlocutor.getMediumImage(), userIconImageView);
-            userIconImageView.setShowOnlineMark(interlocutor.isOnline(), interlocutor.isOnlineMobile());
-            userNameTextView.setText(interlocutor.getFullName());
-            dateTimeTextView.setText(unixToHumanDate(lastMessage.getDate()));
-            lastMessageTextView.setText(lastMessage.getContent());
-            if(dialog.getUnreadCount() > 0) {
-                unreadCountTextView.setText(Integer.toString(dialog.getUnreadCount()));
-                unreadCountTextView.setVisibility(View.VISIBLE);
-            } else unreadCountTextView.setVisibility(View.INVISIBLE);
-        }
-
-        @Override
-        public void onClick(View v) {
-            if(itemClickListener != null)
-                itemClickListener.onClick(v, data.get(getAdapterPosition()).getId());
-        }
-
-        @Override
-        public boolean onLongClick(View v) {
-            if(itemLongClickListener != null)
-                itemLongClickListener.onClick(v, data.get(getAdapterPosition()).getId());
-            return true;
-        }
     }
 
     private String unixToHumanDate(long itemDate) {
@@ -185,5 +144,43 @@ public class DialogsAdapter extends AdvancedAdapter {
                 dateFormat.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.US),
                 dateFormat.get(Calendar.DAY_OF_MONTH),
                 dateFormat.get(Calendar.YEAR));
+    }
+
+    class DialogHolder extends Holder {
+        private SocialCircularImageView userIconImageView;
+        private TextView userNameTextView;
+        private TextView lastMessageTextView;
+        private TextView dateTimeTextView;
+        private TextView unreadCountTextView;
+        private Dialog dialog;
+
+        DialogHolder(View itemView,
+                     AdvancedAdapter<? extends Holder, ? extends Holder> advancedAdapter) {
+            super(itemView, advancedAdapter, R.id.root);
+            userIconImageView = (SocialCircularImageView) itemView.findViewById(R.id.userIcon);
+            userNameTextView = (TextView) itemView.findViewById(R.id.userName);
+            lastMessageTextView = (TextView) itemView.findViewById(R.id.lastMessage);
+            dateTimeTextView = (TextView) itemView.findViewById(R.id.dateTime);
+            unreadCountTextView = (TextView) itemView.findViewById(R.id.unreadCount);
+        }
+
+        @Override
+        public int getId() {
+            return dialog.getId();
+        }
+
+        private void bind(Dialog dialog, Interlocutor interlocutor, Message lastMessage) {
+            this.dialog = dialog;
+
+            ImageLoader.getInstance().displayImage(interlocutor.getMediumImage(), userIconImageView);
+            userIconImageView.setShowOnlineMark(interlocutor.isOnline(), interlocutor.isOnlineMobile());
+            userNameTextView.setText(interlocutor.getFullName());
+            dateTimeTextView.setText(unixToHumanDate(lastMessage.getDate()));
+            lastMessageTextView.setText(lastMessage.getContent());
+            if(dialog.getUnreadCount() > 0) {
+                unreadCountTextView.setText(Integer.toString(dialog.getUnreadCount()));
+                unreadCountTextView.setVisibility(View.VISIBLE);
+            } else unreadCountTextView.setVisibility(View.INVISIBLE);
+        }
     }
 }

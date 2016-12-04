@@ -13,6 +13,9 @@ import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
 
+import static com.korn.im.allin1.constants.DefaultItemsCount.DIALOGS_COUNT;
+import static com.korn.im.allin1.constants.DefaultItemsCount.MESSAGES_COUNT;
+
 public class VkAccount extends Account {
     private VkApi api;
 
@@ -50,7 +53,8 @@ public class VkAccount extends Account {
 
         if(!vkAccessTokenTracker.isTracking())
             vkAccessTokenTracker.startTracking();
-        this.api = new VkApi();
+        this.api = new VkApi(DIALOGS_COUNT,
+                             MESSAGES_COUNT);
     }
 
     public boolean onActivityResult(int requestCode, int resultCode, Intent data, VKCallback<VKAccessToken> listener) {

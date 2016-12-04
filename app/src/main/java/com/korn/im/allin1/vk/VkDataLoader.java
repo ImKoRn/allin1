@@ -6,7 +6,7 @@ import com.korn.im.allin1.accounts.DataLoader;
 import com.korn.im.allin1.pojo.Interlocutor;
 import com.korn.im.allin1.vk.pojo.VkDialog;
 import com.korn.im.allin1.vk.pojo.VkDialogs;
-import com.korn.im.allin1.vk.pojo.VkJsonParser;
+import com.korn.im.allin1.vk.pojo.VkMessage;
 import com.korn.im.allin1.vk.pojo.VkUser;
 import com.vk.sdk.api.VKError;
 import com.vk.sdk.api.VKRequest;
@@ -15,6 +15,7 @@ import com.vk.sdk.api.VKResponse;
 import org.json.JSONException;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,19 +23,27 @@ import java.util.concurrent.atomic.AtomicReference;
 import rx.Observable;
 import rx.subjects.AsyncSubject;
 
-class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocutor> {
-    private static final String UNREAL_STATE_ERROR_MSG = "Unreal state";
+class VkDataLoader implements DataLoader<VkMessage, VkUser, VkDialogs, VkDialog, Interlocutor> {
+    private static final String IMPOSSIBLE_STATE_ERROR_MSG = "Impossible state";
+
+    // Executors
     private ExecutorService parsingExecutorService = Executors.newFixedThreadPool(3);
 
-    //Friend downloading
+    // Friend downloading
     private final AtomicReference<AsyncSubject<Map<Integer, VkUser>>> loadFriendsSubject
             = new AtomicReference<>(null);
-    //Dialogs downloading
+
+    // Dialogs downloading
     private final AtomicReference<AsyncSubject<Pair<VkDialogs, Map<Integer, Interlocutor>>>> loadDialogsSubject
             = new AtomicReference<>(null);
 
-    VkDataLoader() {}
+    // Messages downloading
+    private final ConcurrentHashMap<Integer, AsyncSubject<Pair<Integer, Map<Integer, VkMessage>>>> loadMessagesMap
+            = new ConcurrentHashMap<>();//Collections.synchronizedMap(new HashMap<>());
 
+    //----------------------------------------- Members end ---------------------------------------
+
+    // Friends downloading
     @Override
     public Observable<Map<Integer, VkUser>> loadFriends() {
         for (;;) {
@@ -58,7 +67,7 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
                                      subject.onError(e);
                                  } finally {
                                      if (!loadFriendsSubject.compareAndSet(subject, null))
-                                         throw new IllegalStateException(UNREAL_STATE_ERROR_MSG);
+                                         throw new IllegalStateException(IMPOSSIBLE_STATE_ERROR_MSG);
                                  }
                              });
                          }
@@ -67,7 +76,7 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
                          public void onError(VKError error) {
                              subject.onError(new Error(error.errorMessage));
                              if (!loadFriendsSubject.compareAndSet(subject, null))
-                                 throw new IllegalStateException(UNREAL_STATE_ERROR_MSG);
+                                 throw new IllegalStateException(IMPOSSIBLE_STATE_ERROR_MSG);
                          }
                      });
     }
@@ -98,22 +107,25 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
                                      }));
     }
 
+    // Dialogs downloading
     @Override
     public Observable<Pair<VkDialogs, Map<Integer, Interlocutor>>>
-    loadDialogs(int lastDialogStamp, int size) {
+    loadDialogs(int lastDialogStamp, int count) {
         for (;;) {
             AsyncSubject<Pair<VkDialogs, Map<Integer, Interlocutor>>> subject = loadDialogsSubject.get();
             if (subject != null) return subject.asObservable();
             else if (loadDialogsSubject.compareAndSet(null, subject = AsyncSubject.create()))
-                loadDialogsRequest(subject, lastDialogStamp, size);
+                loadDialogsRequest(subject, count, lastDialogStamp);
         }
     }
 
     private void loadDialogsRequest(
             AsyncSubject<Pair<VkDialogs, Map<Integer, Interlocutor>>> subject,
-            int lastDialogStamp,
-            int size) {
-        VkRequestUtil.createDialogsRequest(lastDialogStamp == 0 ? 0 : 1, lastDialogStamp, size)
+            int count,
+            int lastDialogStamp) {
+        VkRequestUtil.createDialogsRequest(lastDialogStamp == 0 ? 0 : 1,
+                                           count,
+                                           lastDialogStamp)
                      .executeWithListener(new VKRequest.VKRequestListener() {
                          @Override
                          public void onComplete(VKResponse response) {
@@ -125,7 +137,7 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
                                      subject.onError(e);
                                  } finally {
                                      if (!loadDialogsSubject.compareAndSet(subject, null))
-                                         throw new IllegalStateException(UNREAL_STATE_ERROR_MSG);
+                                         throw new IllegalStateException(IMPOSSIBLE_STATE_ERROR_MSG);
                                  }
                              });
                          }
@@ -134,7 +146,7 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
                          public void onError(VKError error) {
                              subject.onError(new Exception(error.errorMessage));
                              if (!loadDialogsSubject.compareAndSet(subject, null))
-                                 throw new IllegalStateException(UNREAL_STATE_ERROR_MSG);
+                                 throw new IllegalStateException(IMPOSSIBLE_STATE_ERROR_MSG);
                          }
                      });
     }
@@ -142,5 +154,57 @@ class VkDataLoader implements DataLoader<VkUser, VkDialogs, VkDialog, Interlocut
     @Override
     public Observable<VkDialog> loadDialog(int id) {
         return Observable.empty();
+    }
+
+    // Messages downloading
+    @Override
+    public Observable<Pair<Integer, Map<Integer, VkMessage>>> loadMessages(final int id,
+                                                                           final int count,
+                                                                           final int lastMessageStamp) {
+        AsyncSubject<Pair<Integer, Map<Integer, VkMessage>>> subject = loadMessagesMap.get(id);
+        if (subject != null) return subject.asObservable();
+        else {
+            AsyncSubject<Pair<Integer, Map<Integer, VkMessage>>> oldSubject =
+                    loadMessagesMap.putIfAbsent(id, subject = AsyncSubject.create());
+            if (oldSubject != null)
+                subject = oldSubject;
+        }
+        return loadMessagesRequest(subject, id, count, lastMessageStamp);
+    }
+
+    private Observable<Pair<Integer, Map<Integer, VkMessage>>> loadMessagesRequest(final AsyncSubject<Pair<Integer, Map<Integer, VkMessage>>> subject,
+                                                                                   final int id,
+                                                                                   final int count,
+                                                                                   final int lastMessageStamp) {
+        VkRequestUtil.createMessagesRequest(id,
+                                            lastMessageStamp,
+                                            count,
+                                            lastMessageStamp == 0 ? 0 : 1)
+                     .executeWithListener(new VKRequest.VKRequestListener() {
+                         @Override
+                         public void onComplete(VKResponse response) {
+                             super.onComplete(response);
+                             parsingExecutorService.execute(() -> {
+                                 try {
+                                     Map<Integer, VkMessage> m = VkJsonParser.parseMessages(response.json);
+                                     subject.onNext(Pair.create(id,
+                                                                m));
+                                     subject.onCompleted();
+                                 } catch (JSONException e) {
+                                     subject.onError(e);
+                                     e.printStackTrace();
+                                 } finally {
+                                     loadMessagesMap.remove(id, subject);
+                                 }
+                             });
+                         }
+
+                         @Override
+                         public void onError(VKError error) {
+                             subject.onError(new Exception(error.errorMessage));
+                             loadMessagesMap.remove(id, subject);
+                         }
+                     });
+        return subject;
     }
 }

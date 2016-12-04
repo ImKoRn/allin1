@@ -1,7 +1,6 @@
 package com.korn.im.allin1.ui.customview;
 
 import android.content.Context;
-import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,13 +8,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.widget.ImageView;
 
 import com.korn.im.allin1.R;
 
-/**
- * Created by korn on 02.09.16.
- */
-public class SocialCircularImageView extends CircularImageView {
+public class SocialCircularImageView extends CircularImageView implements OnlineImageView {
     private static final boolean DEFAULT_ENABLE = false;
     private static final boolean DEFAULT_ENABLE_MOBILE = false;
 
@@ -31,14 +28,14 @@ public class SocialCircularImageView extends CircularImageView {
     private float mobileBorderHeight;
     private float mobileBorderSize;
 
-    private float borderRadius;
-    private float circleRadius;
+    private final float borderRadius;
+    private final float circleRadius;
 
-    Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-    Paint insideMobilePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    Paint borderMobilePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint insideMobilePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint borderMobilePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private float dx;
     private float dy;
@@ -62,32 +59,38 @@ public class SocialCircularImageView extends CircularImageView {
     public SocialCircularImageView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
-        TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.SocialCircularImageView, defStyleAttr, 0);
+        TypedArray attributes = context.obtainStyledAttributes(attrs, R.styleable.SocialImageView, defStyleAttr, 0);
 
-        showOnlineMark = attributes.getBoolean(R.styleable.SocialCircularImageView_social_enableOnlineMark, DEFAULT_ENABLE);
-        showMobileOnlineMark = attributes.getBoolean(R.styleable.SocialCircularImageView_social_enableMobileMark, DEFAULT_ENABLE_MOBILE);
+        showOnlineMark = attributes.getBoolean(R.styleable.SocialImageView_social_enableOnlineMark, DEFAULT_ENABLE);
+        showMobileOnlineMark = attributes.getBoolean(R.styleable.SocialImageView_social_enableMobileMark, DEFAULT_ENABLE_MOBILE);
 
-        circlePaint.setColor(attributes.getColor(R.styleable.SocialCircularImageView_social_onlineMarkCircleColor, Color.GREEN));
-        borderPaint.setColor(attributes.getColor(R.styleable.SocialCircularImageView_social_onlineMarkBorderColor, Color.WHITE));
-        insideMobilePaint.setColor(attributes.getColor(R.styleable.SocialCircularImageView_social_onlineMobileMarkInsideColor, Color.GREEN));
-        borderMobilePaint.setColor(attributes.getColor(R.styleable.SocialCircularImageView_social_onlineMobileMarkBorderColor, Color.WHITE));
+        circlePaint.setColor(attributes.getColor(R.styleable.SocialImageView_social_onlineMarkCircleColor, Color.GREEN));
+        borderPaint.setColor(attributes.getColor(R.styleable.SocialImageView_social_onlineMarkBorderColor, Color.WHITE));
+        insideMobilePaint.setColor(attributes.getColor(R.styleable.SocialImageView_social_onlineMobileMarkInsideColor, Color.GREEN));
+        borderMobilePaint.setColor(attributes.getColor(R.styleable.SocialImageView_social_onlineMobileMarkBorderColor, Color.WHITE));
 
-        borderRadius = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMarkBorderRadius,
+        borderRadius = attributes.getDimension(R.styleable.SocialImageView_social_onlineMarkBorderRadius,
                 DEFAULT_RADIUS);
-        circleRadius = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMarkCircleRadius,
+        circleRadius = attributes.getDimension(R.styleable.SocialImageView_social_onlineMarkCircleRadius,
                 DEFAULT_RADIUS);
-        mobileBorderWidth = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMobileMarkBorderWidth, DEFAULT_RADIUS);
-        mobileBorderHeight = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMobileMarkBorderHeight, DEFAULT_RADIUS);
-        mobileBorderSize = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMobileMarkBorderSize, DEFAULT_RADIUS);
-        mobileBorderRadius = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMobileMarkBorderRadius, DEFAULT_RADIUS);
-        mobileInsideRadius = attributes.getDimension(R.styleable.SocialCircularImageView_social_onlineMobileMarkInsideRadius, DEFAULT_RADIUS);
+        mobileBorderWidth = attributes.getDimension(R.styleable.SocialImageView_social_onlineMobileMarkBorderWidth, DEFAULT_RADIUS);
+        mobileBorderHeight = attributes.getDimension(R.styleable.SocialImageView_social_onlineMobileMarkBorderHeight, DEFAULT_RADIUS);
+        mobileBorderSize = attributes.getDimension(R.styleable.SocialImageView_social_onlineMobileMarkBorderSize, DEFAULT_RADIUS);
+        mobileBorderRadius = attributes.getDimension(R.styleable.SocialImageView_social_onlineMobileMarkBorderRadius, DEFAULT_RADIUS);
+        mobileInsideRadius = attributes.getDimension(R.styleable.SocialImageView_social_onlineMobileMarkInsideRadius, DEFAULT_RADIUS);
 
         attributes.recycle();
     }
 
+    @Override
     public void setShowOnlineMark(boolean show, boolean mobile) {
         showOnlineMark = show;
         showMobileOnlineMark = mobile;
+    }
+
+    @Override
+    public ImageView getImageView() {
+        return this;
     }
 
     @Override

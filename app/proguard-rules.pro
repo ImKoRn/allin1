@@ -42,3 +42,7 @@
 
 # Marshmallow removed Notification.setLatestEventInfo()
 -dontwarn android.app.Notification
+-dontwarn org.apache.lang.**
+-dontwarn okio.**
+-dontwarn com.**
+-dontwarn rx.**

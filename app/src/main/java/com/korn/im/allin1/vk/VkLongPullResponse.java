@@ -71,7 +71,7 @@ public class VkLongPullResponse {
                         break;
                     }*/
                     case 2 : {
-                        /*if(event.size() != 4)
+                        /*if(event.getDialogsCount() != 4)
                             break;
                         updates.addMessageFlagEvent(event.get(3).getAsInt(),
                                 new Pair<>(
@@ -82,7 +82,7 @@ public class VkLongPullResponse {
                         break;
                     }
                     case 3 : {
-                        /*if(event.size() != 4)
+                        /*if(event.getDialogsCount() != 4)
                             break;
                         updates.addMessageFlagEvent(event.get(3).getAsInt(),
                                 new Pair<>(

@@ -18,15 +18,15 @@ import android.widget.Toast;
 import com.korn.im.allin1.R;
 import com.korn.im.allin1.accounts.AccountManager;
 import com.korn.im.allin1.accounts.AccountType;
+import com.korn.im.allin1.accounts.Api;
 import com.korn.im.allin1.adapters.FriendsAdapter;
-import com.korn.im.allin1.adapters.OnlineFriendsAdapter;
 import com.korn.im.allin1.common.RecyclerPauseOnScrollListener;
 import com.korn.im.allin1.pojo.User;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.turingtechnologies.materialscrollbar.AlphabetIndicator;
-import com.turingtechnologies.materialscrollbar.DragScrollBar;
+//import com.turingtechnologies.materialscrollbar.AlphabetIndicator;
+//import com.turingtechnologies.materialscrollbar.DragScrollBar;
 
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import rx.Observable;
@@ -46,12 +46,13 @@ public class OnlineFriendsFragment extends Fragment {
     private Subscription friendsErrorsSubscription;
 
     // Members
-    private OnlineFriendsAdapter onlineFriendsAdapter;
+    private FriendsAdapter onlineFriendsAdapter;
     private LinearLayoutManager llm;
     private Parcelable managerLastState;
 
     public OnlineFriendsFragment() {}
 
+    // Lifecycle methods
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -64,14 +65,15 @@ public class OnlineFriendsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_online_friends, container, false);
-        DragScrollBar dragScrollBar = (DragScrollBar) rootView.findViewById(R.id.fast_scroller);
+/*        DragScrollBar dragScrollBar = (DragScrollBar) rootView.findViewById(R.id.fast_scroller);
         dragScrollBar.addIndicator(new AlphabetIndicator(getActivity()), true);
-        dragScrollBar.setDraggableFromAnywhere(true);
+        dragScrollBar.setDraggableFromAnywhere(true);*/
 
         swipeRefreshOnlineFriendsLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_refresh_online_friends);
         swipeRefreshOnlineFriendsLayout.setOnRefreshListener(() -> {
-            swipeRefreshOnlineFriendsLayout.setRefreshing(true);
-            fetchFriends();
+            if (load(Api.Request.RELOAD) == Api.Response.LOADING ||
+                    load(Api.Request.LOAD_FIRST) == Api.Response.LOADING)
+                swipeRefreshOnlineFriendsLayout.setRefreshing(true);
         });
         swipeRefreshOnlineFriendsLayout.setColorSchemeColors(Color.MAGENTA);
 
@@ -80,12 +82,40 @@ public class OnlineFriendsFragment extends Fragment {
                 R.id.online_friends_list);
 
         onlineFriendsList.setLayoutManager(llm = getLayoutManager());
-        onlineFriendsList.setAdapter(onlineFriendsAdapter = new OnlineFriendsAdapter(getContext(), FriendsAdapter.DEFAULT_CAPACITY));
+        onlineFriendsList.setAdapter(onlineFriendsAdapter = new FriendsAdapter(getContext(), FriendsAdapter.DEFAULT_CAPACITY));
         onlineFriendsList.addOnScrollListener(new RecyclerPauseOnScrollListener(ImageLoader.getInstance(),
                                                                                 true, true));
         return rootView;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        friendsUpdateSubscription = subscribeOnFriendsUpdate();
+        friendsErrorsSubscription = subscribeOnFriendsErrors();
+        fetchFriends();
+        Api.State state = isFriendsLoading();
+        swipeRefreshOnlineFriendsLayout.setRefreshing(state == Api.State.RELOADING ||
+                                                              state == Api.State.FIRST_LOADING);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (friendsUpdateSubscription != null) friendsUpdateSubscription.unsubscribe();
+        if (friendsErrorsSubscription != null) friendsErrorsSubscription.unsubscribe();
+
+        managerLastState = llm.onSaveInstanceState();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(ONLINE_FRIENDS_MANAGER_STATE, managerLastState);
+    }
+    //----------------------------------- Lifecycle end -------------------------------------------
+
+    // Methods
     public LinearLayoutManager getLayoutManager() {
         if(getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             return new LinearLayoutManager(getContext()) {
@@ -104,29 +134,11 @@ public class OnlineFriendsFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        friendsUpdateSubscription = subscribeOnFriendsUpdate();
-        friendsErrorsSubscription = subscribeOnFriendsErrors();
-        fetchFriends();
-        swipeRefreshOnlineFriendsLayout.setRefreshing(isFriendsLoading());
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (friendsUpdateSubscription != null) friendsUpdateSubscription.unsubscribe();
-        if (friendsErrorsSubscription != null) friendsErrorsSubscription.unsubscribe();
-
-        managerLastState = llm.onSaveInstanceState();
-        onlineFriendsAdapter.clear();
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable(ONLINE_FRIENDS_MANAGER_STATE, managerLastState);
+    private Api.Response load(Api.Request request) {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .loadFriends(request);
     }
 
     private void fetchFriends() {
@@ -134,7 +146,14 @@ public class OnlineFriendsFragment extends Fragment {
                       .getAccount(AccountType.Vk)
                       .getApi()
                       .fetchFriends()
-                      .flatMap((Func1<Map<Integer, ? extends User>, Observable<Collection<? extends User>>>) integerMap -> Observable.just(integerMap.values()))
+                      .flatMap((Func1<Map<Integer, ? extends User>, Observable<Map<Integer, ? extends User>>>)
+                                       friends -> {
+                                           Map<Integer, User> onlineFriends = new HashMap<>(friends.size());
+                                           for (Map.Entry<Integer, ? extends User> entry : friends.entrySet())
+                                               if (entry.getValue().isOnline())
+                                                   onlineFriends.put(entry.getKey(), entry.getValue());
+                                           return Observable.just(onlineFriends);
+                                       })
                       .subscribeOn(Schedulers.computation())
                       .observeOn(AndroidSchedulers.mainThread())
                       .subscribe(users -> {
@@ -143,35 +162,48 @@ public class OnlineFriendsFragment extends Fragment {
                                      llm.onRestoreInstanceState(managerLastState);
                                      managerLastState = null;
                                  },
-                                 throwable -> Toast.makeText(OnlineFriendsFragment.this.getActivity(),
-                                                             throwable.getMessage(),
-                                                             Toast.LENGTH_SHORT).show());
+                                 throwable -> {
+                                     if (load(Api.Request.LOAD_FIRST) == Api.Response.LOADING)
+                                         swipeRefreshOnlineFriendsLayout.setRefreshing(true);
+                                 });
     }
 
+    private Api.State isFriendsLoading() {
+        return AccountManager.getInstance()
+                             .getAccount(AccountType.Vk)
+                             .getApi()
+                             .getFriendsLoadingState();
+    }
+
+    // Subscriptions methods
     private Subscription subscribeOnFriendsUpdate() {
         return AccountManager.getInstance()
                              .getAccount(AccountType.Vk)
                              .getApi()
-                             .getDataPublisher()
+                             .getEventsManager()
                              .friendsObservable()
-                             .flatMap((Func1<Map<Integer, ? extends User>, Observable<Collection<? extends User>>>)
-                                              friends -> Observable.just(friends.values()))
+                             .flatMap((Func1<Map<Integer, ? extends User>, Observable<Map<Integer, ? extends User>>>)
+                                              friends -> {
+                                                  Map<Integer, User> onlineFriends = new HashMap<>(friends.size());
+                                                  for (Map.Entry<Integer, ? extends User> entry : friends.entrySet())
+                                                      if (entry.getValue().isOnline())
+                                                          onlineFriends.put(entry.getKey(), entry.getValue());
+                                                  return Observable.just(onlineFriends);
+                                              })
                              .subscribeOn(Schedulers.computation())
                              .observeOn(AndroidSchedulers.mainThread())
                              .subscribe(users -> {
                                             onlineFriendsAdapter.setData(users);
                                             swipeRefreshOnlineFriendsLayout.setRefreshing(false);
                                         },
-                                        throwable -> Toast.makeText(OnlineFriendsFragment.this.getActivity(),
-                                                                    throwable.getMessage(),
-                                                                    Toast.LENGTH_SHORT).show());
+                                        throwable -> {});
     }
 
     private Subscription subscribeOnFriendsErrors() {
         return AccountManager.getInstance()
                              .getAccount(AccountType.Vk)
                              .getApi()
-                             .getDataPublisher()
+                             .getEventsManager()
                              .friendsErrorsObservable()
                              .observeOn(AndroidSchedulers.mainThread())
                              .subscribe(throwable -> {
@@ -183,12 +215,5 @@ public class OnlineFriendsFragment extends Fragment {
                                         throwable -> Toast.makeText(OnlineFriendsFragment.this.getActivity(),
                                                                     throwable.getMessage(),
                                                                     Toast.LENGTH_SHORT).show());
-    }
-
-    private boolean isFriendsLoading() {
-        return AccountManager.getInstance()
-                             .getAccount(AccountType.Vk)
-                             .getApi()
-                             .isFriendsLoading();
     }
 }

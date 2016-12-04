@@ -27,25 +27,23 @@ public interface Api {
      *
      * @return Observable with Map of {@link User}'s mapped by {@link User#getId()}
      *
-     * @see #loadFriends()
+     * @see #loadFriends(Request)
      * @see #fetchFriend(int)
      * */
     Observable<? extends Map<Integer, ? extends User>> fetchFriends();
     /**
-     * Load friends from Ethernet and deliver result by {@link DataPublisher#friendsObservable()}
+     * Load friends from Ethernet and deliver result by {@link EventManager#friendsObservable()}
      * Do not send a new request is not executed until the previous.
-     * @see #isFriendsLoading()
+     * @see #getFriendsLoadingState()
      * @see #fetchFriends()
      * @see #fetchFriend(int)
      * */
-    void loadFriends();
-
-    boolean isFriendsLoading();
+    Response loadFriends(Request request);
 
     /**
      * Fetch friend from cache or database if not exist load it from Internet
      * @return {@link Observable} with {@link User}
-     * @see #loadFriends()
+     * @see #loadFriends(Request)
      * @see #fetchFriends()
      * */
     Observable<? extends User> fetchFriend(int id);
@@ -55,32 +53,50 @@ public interface Api {
      * <p>
      * If data not exist {@link rx.Subscriber#onError(Throwable)}
      * with {@link com.korn.im.allin1.errors.NoDataException} will be called
-     *
-     * @return {@link Observable} with Object extends {@link Dialogs}
      * */
     Observable<? extends Pair<? extends Dialogs, ? extends Map<Integer, ? extends Interlocutor>>> fetchDialogs();
 
     /**
-     * Load dialogs from Internet and sends result via {@link DataPublisher#dialogsObservable()}
+     * Load dialogs from Internet and sends result via {@link EventManager#dialogsObservable()}
      * {@link Observable} with {@link Pair} of Objects extends {@link Dialogs} and {@link Map} of {@link Interlocutor} objects
      * */
-    void loadDialogs();
-
-    void loadNextDialogs();
+    Response loadDialogs(Request request);
 
     /**
-     * Fetch dialog from cache or database if not exist load it from Internet
-     * @return {@link Observable} with Object extends {@link Dialog}
+     * Load dialogs after last dialog in cache from Internet and sends result via {@link EventManager#dialogsObservable()}
+     * {@link Observable} with {@link Pair} of Objects extends {@link Dialogs} and {@link Map} of {@link Interlocutor} objects
+     *
+    void loadNextDialogs();*/
+
+    /**
+     * Fetch dialog from cache or database
+     * <p>
+     * If data not exist {@link rx.Subscriber#onError(Throwable)}
+     * with {@link com.korn.im.allin1.errors.NoDataException} will be called
      * */
     Observable<? extends Dialog> fetchDialog(int id);
 
     Observable<? extends Dialog> loadDialog(int id);
 
+    /**
+     * Fetch dialog from cache or database if not exist load it from Internet
+     * <p>
+     * If data not exist {@link rx.Subscriber#onError(Throwable)}
+     * with {@link com.korn.im.allin1.errors.NoDataException} will be called
+     * */
     Observable<? extends Map<Integer, ? extends Message>> fetchMessages(int id);
 
     /**
-     * Fetch interlocutor from cache or database if not exist load it from Internet
-     * @return {@link Observable} with Object extends {@link Interlocutor}
+     * Load messages from Internet and sends result via {@link EventManager#messagesObservable()}
+     * {@link Observable} with {@link Pair} of interlocutor id and {@link Map} of {@link Message} by their id
+     * */
+    Response loadMessages(int id, Request request);
+
+    /**
+     * Fetch interlocutor from cache or database
+     * <p>
+     * If data not exist {@link rx.Subscriber#onError(Throwable)}
+     * with {@link com.korn.im.allin1.errors.NoDataException} will be called
      * */
     Observable<? extends Interlocutor> fetchInterlocutor(int id);
 
@@ -91,24 +107,26 @@ public interface Api {
     Observable<Map<Integer, ? extends Interlocutor>> loadInterlocutors(int... id);
 
 
-    DataPublisher<? extends User,
-            ? extends Dialogs,
-            ? extends Dialog,
-            ? extends Interlocutor> getDataPublisher();
+    EventManager<
+                ? extends Message,
+                ? extends User,
+                ? extends Dialogs,
+                ? extends Dialog,
+                ? extends Interlocutor> getEventsManager();
 
     /**
      * Check if exist next page of dialogs
      * @see Dialogs
      * @return true if next page of dialogs exist
      * */
-    boolean hasMoreDialogsToUpdate();
+    boolean canLoadDialogs();
 
     /**
      * Check if exist next page of friends
      * @see User
      * @return true if next page of friends exist
      * */
-    boolean hasMoreFriendsToUpdate();
+    boolean canLoadFriends();
 
     /**
      * Check if exist next page of messages
@@ -116,5 +134,66 @@ public interface Api {
      * @see Message
      * @return true if next page of messages exist
      * */
-    boolean hasMoreMessagesToUpdate(int id);
+    boolean canLoadMessages(int id);
+
+    /**
+     * Check {@link #loadFriends(Request)} request state
+     * @return {@link State#NOTHING} - if idle <p>
+     *         {@link State#LOADING } - if loading next page of data <p>
+     *         {@link State#RELOADING} - if reloading data
+     * */
+    State getFriendsLoadingState();
+
+    /**
+     * Check {@link #loadDialogs(Request)} request state
+     * @return {@link State#NOTHING} - if idle <p>
+     *         {@link State#LOADING } - if loading next page of data <p>
+     *         {@link State#RELOADING} - if reloading data
+     * */
+    State getDialogsLoadingState();
+
+    /**
+     * Check {@link #loadMessages(int, Request)} request state
+     * @return {@link State#NOTHING} - if idle <p>
+     *         {@link State#LOADING } - if loading next page of data <p>
+     *         {@link State#RELOADING} - if reloading data
+     * */
+    State getMessagesLoadingState(int id);
+
+    enum State {
+        NOTHING,
+        FIRST_LOADING,
+        LOADING,
+        RELOADING
+    }
+
+    enum Request {
+        LOAD_FIRST {
+            @Override
+            public State getRequestState() {
+                return State.FIRST_LOADING;
+            }
+        },
+        LOAD {
+            @Override
+            public State getRequestState() {
+                return State.LOADING;
+            }
+        },
+        RELOAD {
+            @Override
+            public State getRequestState() {
+                return State.RELOADING;
+            }
+        };
+
+        public abstract State getRequestState();
+    }
+
+    enum Response {
+        LOADING,
+        BUSY,
+        NOTHING_TO_LOAD,
+        NOTHING_TO_RELOAD
+    }
 }
